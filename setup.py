@@ -19,7 +19,7 @@ setuptools.setup(
     install_requires=[
         "dpu-utils>=0.2.13",
         "more-itertools",
-        "numpy==1.19.2",  # Pinned due to incompatibility with `tensorflow`.
+        "numpy==1.21.0",  # Pinned due to incompatibility with `tensorflow`.
         "scikit-learn>=0.24.1",
         "tensorflow==2.1.0",  # Pinned due to issues with `h5py`.
         "tf2_gnn>=2.13.0",
