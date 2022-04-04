@@ -1,0 +1,8 @@
+# Python bytecode cache:
+__pycache__/
+
+# Package installation:
+*.egg-info/
+
+# Model checkpoints:
+*_best.pkl
