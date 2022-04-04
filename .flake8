@@ -1,0 +1,13 @@
+[flake8]
+max-line-length = 100
+ignore =
+    # E203: whitespace before ':'
+    E203,
+    # E501: Line too long -- triggered by comments; line length everywhere else is handled by black
+    E501,
+    # E741: ambiguous variable name
+    E741,
+    # F541: f-string is missing placeholders
+    F541
+    # W503: Line break occurred before a binary operator -- comes from black
+    W503,
