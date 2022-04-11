@@ -133,7 +133,16 @@ class MoLeRBaseModel(GraphTaskModel):
     def uses_categorical_features(self) -> bool:
         return self._node_categorical_num_classes is not None
 
-    def _build_decoder(self, input_shapes: Dict[str, Any]):
+    @property
+    def decoder(self):
+        return self._decoder_layer
+
+    @property
+    def latent_dim(self):
+        return self._latent_repr_dim
+
+    def build(self, input_shapes: Dict[str, Any]):
+        """Build decoder."""
         latent_graph_representation_shape = tf.TensorShape((None, self.latent_dim))
 
         with tf.name_scope("decoder"):
@@ -158,6 +167,9 @@ class MoLeRBaseModel(GraphTaskModel):
                     candidate_attachment_points=input_shapes["valid_attachment_point_choices"],
                 )
             )
+
+        # Skip call to GraphTaskModel.build, in case we don't want to build an
+        # encoder GNN.
 
     def _compute_decoder_loss_and_metrics(
         self, batch_features, task_output, batch_labels
@@ -206,14 +218,6 @@ class MoLeRBaseModel(GraphTaskModel):
                 metrics_logger.log_step_metrics(task_metrics, batch_features)
 
         return metrics_logger.get_epoch_summary()
-
-    @property
-    def decoder(self):
-        return self._decoder_layer
-
-    @property
-    def latent_dim(self):
-        return self._latent_repr_dim
 
     @staticmethod
     def _dict_average(task_results, key):

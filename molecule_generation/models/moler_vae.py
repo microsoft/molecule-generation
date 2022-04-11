@@ -158,6 +158,10 @@ class MoLeRVae(MoLeRBaseModel):
                 raise ValueError(f"Unknown property type {prop_type}")
 
     def build(self, input_shapes: Dict[str, Any]):
+
+        # Build decoder
+        super().build(input_shapes=input_shapes)
+
         # Compute some sizes and shapes we'll re-use a few times:
         final_node_representation_dim = self._params["gnn_hidden_dim"]
         if self._params["use_intermediate_gnn_results"]:
@@ -184,8 +188,6 @@ class MoLeRVae(MoLeRBaseModel):
             with tf.name_scope(f"property_{prop_name}"):
                 prop_predictor.build(latent_graph_representation_shape)
 
-        self._build_decoder(input_shapes=input_shapes)
-
         if self.uses_categorical_features and self._node_categorical_features_embedding is None:
             with tf.name_scope("node_categorical_features_embedding"):
                 self._node_categorical_features_embedding = self.add_weight(
@@ -197,6 +199,7 @@ class MoLeRVae(MoLeRBaseModel):
                     trainable=True,
                 )
 
+        # Build encoder and mark self as built
         GraphTaskModel.build(self, input_shapes)
 
     def get_initial_node_feature_shape(self, input_shapes) -> tf.TensorShape:

@@ -95,8 +95,7 @@ class MoLeRGenerator(MoLeRBaseModel):
         }
 
     def build(self, input_shapes: Dict[str, Any]):
-        self._build_decoder(input_shapes=input_shapes)
-
+        super().build(input_shapes=input_shapes)
         # Skip call to GraphTaskModel.build, since we don't want to build an
         # encoder GNN for this model
         self.built = True
