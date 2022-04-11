@@ -9,7 +9,7 @@ The `molecule_generation` package depends on `rdkit`, which has to be installed 
 ```bash
 conda create --name moler-env python=3.7
 conda activate moler-env
-conda install rdkit==2020.09.1.0
+conda install rdkit==2020.09.1.0 -c conda-forge
 ```
 
 Then, to install `molecule_generation`, simply run `pip install -e .` within the root folder.
