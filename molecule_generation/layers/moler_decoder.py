@@ -1303,7 +1303,7 @@ class MoLeRDecoder(tf.keras.layers.Layer):
 
         # Step 0: Pick first node types for states that do not have an initial molecule.
         first_node_pick_results = self._decoder_pick_first_atom_types(
-            decoder_states_empty, num_samples=beam_size, sampling_mode=sampling_mode
+            decoder_states=decoder_states_empty, num_samples=beam_size, sampling_mode=sampling_mode
         )
 
         # print("I: Picked first node types:", [picks for picks, _ in first_node_pick_results])
@@ -1370,7 +1370,9 @@ class MoLeRDecoder(tf.keras.layers.Layer):
 
             # Step 2: For states that require a new atom, try to pick one:
             node_pick_results = self._decoder_pick_new_atom_types(
-                require_atom_states, num_samples=beam_size, sampling_mode=sampling_mode
+                decoder_states=require_atom_states,
+                num_samples=beam_size,
+                sampling_mode=sampling_mode,
             )
 
             for decoder_state, (node_type_picks, node_type_logprobs) in zip(
@@ -1419,7 +1421,7 @@ class MoLeRDecoder(tf.keras.layers.Layer):
                     attachment_pick_results,
                     attachment_pick_logits,
                 ) = self._decoder_pick_attachment_points(
-                    require_attachment_point_states, sampling_mode=sampling_mode
+                    decoder_states=require_attachment_point_states, sampling_mode=sampling_mode
                 )
 
                 for decoder_state, attachment_point_picks, attachment_point_logits in zip(
@@ -1510,6 +1512,7 @@ class MoLeRDecoder(tf.keras.layers.Layer):
 
     def _decoder_pick_new_atom_types(
         self,
+        *,
         decoder_states: List[MoLeRDecoderState],
         sampling_mode: DecoderSamplingMode,
         num_samples: int = 1,
@@ -1608,6 +1611,7 @@ class MoLeRDecoder(tf.keras.layers.Layer):
 
     def _decoder_pick_first_atom_types(
         self,
+        *,
         decoder_states: List[MoLeRDecoderState],
         sampling_mode: DecoderSamplingMode,
         num_samples: int = 1,
@@ -1688,8 +1692,8 @@ class MoLeRDecoder(tf.keras.layers.Layer):
     def _decoder_pick_new_bond_types(
         self,
         *,
-        sampling_mode: DecoderSamplingMode,
         decoder_states: List[MoLeRDecoderState],
+        sampling_mode: DecoderSamplingMode,
         store_generation_traces: bool = False,
         num_samples: int = 1,
     ) -> Iterable[
@@ -1915,6 +1919,7 @@ class MoLeRDecoder(tf.keras.layers.Layer):
 
     def _decoder_pick_attachment_points(
         self,
+        *,
         decoder_states: List[MoLeRDecoderState],
         sampling_mode: DecoderSamplingMode,
         num_samples: int = 1,
