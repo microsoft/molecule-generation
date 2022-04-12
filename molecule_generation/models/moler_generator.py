@@ -4,7 +4,7 @@ from molecule_generation.models.moler_base_model import MoLeRBaseModel
 
 import tensorflow as tf
 
-from molecule_generation.layers.moler_decoder import MoLeRDecoderOutput, MoLeRDecoderInput
+from molecule_generation.layers.moler_decoder import MoLeRDecoderOutput
 
 
 @dataclass
@@ -35,27 +35,9 @@ class MoLeRGenerator(MoLeRBaseModel):
         molecule_representations = tf.zeros(
             (batch_features["num_partial_graphs_in_batch"], self.latent_dim)
         )
-
-        partial_adjacency_lists: Tuple[tf.Tensor, ...] = tuple(
-            batch_features[f"partial_adjacency_list_{edge_type_idx}"]
-            for edge_type_idx in range(self._num_edge_types)
-        )  # Each element has shape (E, 2)
-        decoder_output: MoLeRDecoderOutput = self._decoder_layer(
-            MoLeRDecoderInput(
-                node_features=batch_features["partial_node_features"],
-                node_categorical_features=batch_features["partial_node_categorical_features"],
-                adjacency_lists=partial_adjacency_lists,
-                num_graphs_in_batch=batch_features["num_partial_graphs_in_batch"],
-                node_to_graph_map=batch_features["node_to_partial_graph_map"],
-                graph_to_focus_node_map=batch_features["focus_nodes"],
-                input_molecule_representations=molecule_representations,
-                graphs_requiring_node_choices=batch_features[
-                    "partial_graphs_requiring_node_choices"
-                ],
-                candidate_edges=batch_features["valid_edge_choices"],
-                candidate_edge_features=batch_features["edge_features"],
-                candidate_attachment_points=batch_features["valid_attachment_point_choices"],
-            ),
+        decoder_output = self._get_decoder_output(
+            batch_features=batch_features,
+            molecule_representations=molecule_representations,
             training=training,
         )
 
