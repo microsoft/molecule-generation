@@ -180,7 +180,7 @@ class MoLeRBaseModel(GraphTaskModel):
         )
 
         total_loss = (
-            +self._params["node_classification_loss_weight"]
+            self._params["node_classification_loss_weight"]
             * decoder_metrics.node_classification_loss
             + self._params["first_node_classification_loss_weight"]
             * decoder_metrics.first_node_classification_loss
