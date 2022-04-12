@@ -29,7 +29,7 @@ class MoLeRBaseModel(GraphTaskModel):
         base_hypers.update(
             {
                 # Dimension of the context/conditioning vector supplied to the MoLeRDecoder.
-                # Actually, we set this vector to all-zeros, but leave it for ease of reuse of MoLeR VAE code
+                # MoLeRGenerator will set this conditioning vector to all-zeros.
                 "latent_repr_size": 512,
                 # Relative contributions of the different next step prediction losses:
                 "node_classification_loss_weight": 1.0,
