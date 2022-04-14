@@ -55,7 +55,7 @@ def load_vae_model_and_dataset(
     load_weights_verbosely(weight_file, model)
 
     if not isinstance(model, (CGVAE, MoLeRVae, MoLeRGenerator)):
-        raise ValueError(f"Model loaded from {trained_model_path} not a CGVAE or MoLeRVae model!")
+        raise ValueError(f"Model loaded from {trained_model_path} not a CGVAE or MoLeR model!")
 
     return dummy_dataset, model
 
