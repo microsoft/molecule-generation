@@ -11,11 +11,10 @@ import numpy as np
 from rdkit import Chem
 from more_itertools import chunked, ichunked
 
-from molecule_generation.models.moler_generator import MoLeRGenerator
-from molecule_generation.utils.moler_decoding_utils import DecoderSamplingMode
 from molecule_generation.dataset.in_memory_trace_dataset import InMemoryTraceDataset, DataFold
+from molecule_generation.models.moler_generator import MoLeRGenerator
 from molecule_generation.models.moler_vae import MoLeRVae
-from molecule_generation.utils.moler_decoding_utils import MoLeRDecoderState
+from molecule_generation.utils.moler_decoding_utils import DecoderSamplingMode, MoLeRDecoderState
 from molecule_generation.utils.model_utils import load_vae_model_and_dataset
 from molecule_generation.preprocessing.data_conversion_utils import remove_non_max_frags
 
