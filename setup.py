@@ -7,7 +7,7 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 setuptools.setup(
     name="molecule_generation",
-    version="0.0.0",
+    use_scm_version=True,
     license="MIT",
     author="Krzysztof Maziarz",
     author_email="krzysztof.maziarz@microsoft.com",
@@ -15,6 +15,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/microsoft/molecule-generation/",
+    setup_requires=["setuptools_scm"],
     python_requires="==3.7.*",
     install_requires=[
         "dpu-utils>=0.2.13",
