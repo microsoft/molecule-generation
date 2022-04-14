@@ -1,7 +1,6 @@
 """MoLeR Variational Autoencoder model."""
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, List, NamedTuple, Union
-from molecule_generation.models.moler_base_model import MoLeRBaseModel
 
 import numpy as np
 import tensorflow as tf
@@ -11,6 +10,7 @@ from tf2_gnn.layers import NodesToGraphRepresentationInput, WeightedSumGraphRepr
 
 from molecule_generation.dataset.trace_dataset import TraceDataset
 from molecule_generation.layers.moler_decoder import MoLeRDecoderMetrics
+from molecule_generation.models.moler_base_model import MoLeRBaseModel
 from molecule_generation.utils.property_models import (
     PropertyTaskType,
     PropertyPredictionLayer,
