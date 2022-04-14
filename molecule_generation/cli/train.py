@@ -155,7 +155,7 @@ def run_from_args(args: argparse.Namespace) -> Tuple[str, str, str]:
     dataset: JSONLAbstractTraceDataset = loaded_model_dataset[0]
     if not isinstance(loaded_model_dataset[1], (CGVAE, MoLeRVae, MoLeRGenerator)):
         raise ValueError(
-            f"This training script can only work with CGVAE/MoLeRVae, "
+            f"This training script can only work with CGVAE/MoLeR, "
             f"but got {loaded_model_dataset[1]}!"
         )
     model: Union[CGVAE, MoLeRVae, MoLeRGenerator] = loaded_model_dataset[1]
