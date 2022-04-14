@@ -8,8 +8,8 @@ import tensorflow as tf
 from dpu_utils.utils import RichPath
 from tf2_gnn import DataFold
 
-from molecule_generation.models.moler_generator import MoLeRGenerator
 from molecule_generation.dataset.jsonl_moler_trace_dataset import JSONLMoLeRTraceDataset
+from molecule_generation.models.moler_generator import MoLeRGenerator
 from molecule_generation.models.moler_vae import MoLeRVae
 
 
