@@ -12,8 +12,9 @@ from rdkit import Chem
 from more_itertools import chunked, ichunked
 
 from molecule_generation.dataset.in_memory_trace_dataset import InMemoryTraceDataset, DataFold
+from molecule_generation.models.moler_generator import MoLeRGenerator
 from molecule_generation.models.moler_vae import MoLeRVae
-from molecule_generation.utils.moler_decoding_utils import MoLeRDecoderState
+from molecule_generation.utils.moler_decoding_utils import DecoderSamplingMode, MoLeRDecoderState
 from molecule_generation.utils.model_utils import load_vae_model_and_dataset
 from molecule_generation.preprocessing.data_conversion_utils import remove_non_max_frags
 
@@ -71,16 +72,18 @@ def _encode_from_smiles(dataset: InMemoryTraceDataset, model: MoLeRVae, smiles_l
 
 
 def _decode_from_latents(
-    model: MoLeRVae,
+    model: Union[MoLeRVae, MoLeRGenerator],
     latent_representations: np.ndarray,
     include_latent_samples: bool = False,
     init_mols: List[Any] = None,
     beam_size: int = 1,
+    sampling_mode: DecoderSamplingMode = DecoderSamplingMode.GREEDY,
 ) -> Iterator[Tuple[str, Optional[np.ndarray]]]:
     decoder_states = model.decoder.decode(
         graph_representations=latent_representations,
         initial_molecules=init_mols,
         beam_size=beam_size,
+        sampling_mode=sampling_mode,
     )
 
     decoder_states_by_id: DefaultDict[Any, List[MoLeRDecoderState]] = defaultdict(list)
@@ -115,9 +118,20 @@ def _moler_worker_process(
             encoded_mols = _encode_from_smiles(dataset, moler_model, smiles_list)
             output_queue.put((uid, encoded_mols))
         elif request == MoLeRRequestType.DECODE:
-            latent_representations, include_latent_samples, init_mols, beam_size = arguments
+            (
+                latent_representations,
+                include_latent_samples,
+                init_mols,
+                beam_size,
+                sampling_mode,
+            ) = arguments
             decoder_results = _decode_from_latents(
-                moler_model, latent_representations, include_latent_samples, init_mols, beam_size
+                moler_model,
+                latent_representations,
+                include_latent_samples,
+                init_mols,
+                beam_size,
+                sampling_mode,
             )
             output_queue.put((uid, list(decoder_results)))
         else:
@@ -247,6 +261,7 @@ class MoLeRInferenceServer(object):
         include_latent_samples: bool = False,
         init_mols: List[Any] = None,
         beam_size: int = 1,
+        sampling_mode: DecoderSamplingMode = DecoderSamplingMode.GREEDY,
     ) -> List[Tuple[str, Optional[np.ndarray]]]:
         self.init_workers()
         # Issue all requests to the workers, and prepare results array to hold them:
@@ -270,7 +285,13 @@ class MoLeRInferenceServer(object):
                 (
                     MoLeRRequestType.DECODE,
                     len(results),
-                    (latents_chunk, include_latent_samples, list(next(init_mol_chunks)), beam_size),
+                    (
+                        latents_chunk,
+                        include_latent_samples,
+                        list(next(init_mol_chunks)),
+                        beam_size,
+                        sampling_mode,
+                    ),
                 )
             )
             results.append(None)

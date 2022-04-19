@@ -18,6 +18,7 @@ from molecule_generation.dataset.jsonl_cgvae_trace_dataset import JSONLCGVAETrac
 from molecule_generation.dataset.jsonl_moler_trace_dataset import JSONLMoLeRTraceDataset
 from molecule_generation.models.cgvae import CGVAE
 from molecule_generation.models.moler_vae import MoLeRVae
+from molecule_generation.models.moler_generator import MoLeRGenerator
 from molecule_generation.utils.cli_utils import setup_logging, supress_tensorflow_warnings
 
 
@@ -105,10 +106,18 @@ cli.register_task(
 
 
 cli.register_task(
-    task_name="MoLeR",
+    task_name="MoLeR",  # MoLeR VAE
     dataset_class=JSONLMoLeRTraceDataset,
     dataset_default_hypers=moler_dataset_params,
     model_class=MoLeRVae,
+    model_default_hypers={"num_train_steps_between_valid": 5000},
+)
+
+cli.register_task(
+    task_name="MoLeRGenerator",
+    dataset_class=JSONLMoLeRTraceDataset,
+    dataset_default_hypers=moler_dataset_params,
+    model_class=MoLeRGenerator,
     model_default_hypers={"num_train_steps_between_valid": 5000},
 )
 
@@ -144,12 +153,12 @@ def run_from_args(args: argparse.Namespace) -> Tuple[str, str, str]:
             f"but got {loaded_model_dataset[0]}!"
         )
     dataset: JSONLAbstractTraceDataset = loaded_model_dataset[0]
-    if not isinstance(loaded_model_dataset[1], (CGVAE, MoLeRVae)):
+    if not isinstance(loaded_model_dataset[1], (CGVAE, MoLeRVae, MoLeRGenerator)):
         raise ValueError(
-            f"This training script can only work with CGVAE/MoLeRVae, "
+            f"This training script can only work with CGVAE/MoLeR, "
             f"but got {loaded_model_dataset[1]}!"
         )
-    model: Union[CGVAE, MoLeRVae] = loaded_model_dataset[1]
+    model: Union[CGVAE, MoLeRVae, MoLeRGenerator] = loaded_model_dataset[1]
 
     log(f"Dataset parameters: {json.dumps(training_utils.unwrap_tf_tracked_data(dataset._params))}")
     log(f"Model parameters: {json.dumps(training_utils.unwrap_tf_tracked_data(model._params))}")
@@ -213,7 +222,7 @@ def run_from_args(args: argparse.Namespace) -> Tuple[str, str, str]:
 
 
 def train(
-    model: Union[CGVAE, MoLeRVae],
+    model: Union[CGVAE, MoLeRVae, MoLeRGenerator],
     dataset: JSONLAbstractTraceDataset,
     log_fun: Callable[[str], None],
     run_id: str,

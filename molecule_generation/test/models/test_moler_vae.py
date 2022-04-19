@@ -9,6 +9,7 @@ from dpu_utils.utils import RichPath
 from tf2_gnn import DataFold
 
 from molecule_generation.dataset.jsonl_moler_trace_dataset import JSONLMoLeRTraceDataset
+from molecule_generation.models.moler_generator import MoLeRGenerator
 from molecule_generation.models.moler_vae import MoLeRVae
 
 
@@ -36,7 +37,8 @@ def dataset():
     return dataset
 
 
-def test_train_improvement(dataset):
+@pytest.mark.parametrize("model_class", [MoLeRVae, MoLeRGenerator])
+def test_train_improvement(dataset, model_class):
     random.seed(0)
     np.random.seed(0)
     tf.random.set_seed(0)
@@ -49,8 +51,8 @@ def test_train_improvement(dataset):
 
     warnings.warn = ignore_warn
 
-    model_params = MoLeRVae.get_default_hyperparameters()
-    model = MoLeRVae(
+    model_params = model_class.get_default_hyperparameters()
+    model = model_class(
         model_params,
         dataset=dataset,
     )

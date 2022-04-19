@@ -49,6 +49,14 @@ class MoLeRDecoderMetrics:
     attachment_point_selection_loss: Optional[tf.Tensor]
 
 
+@dataclass
+class MoLeRDecoderOutput:
+    node_type_logits: tf.Tensor
+    edge_candidate_logits: tf.Tensor
+    edge_type_logits: tf.Tensor
+    attachment_point_selection_logits: tf.Tensor
+
+
 @tf.function(
     input_signature=[
         tf.TensorSpec(shape=(None,), dtype=tf.float32),
@@ -292,7 +300,7 @@ class MoLeRDecoder(tf.keras.layers.Layer):
             **kwargs,
         )
 
-    def compute_metrics(self, *, batch_features, batch_labels, task_output):
+    def compute_metrics(self, *, batch_features, batch_labels, task_output) -> MoLeRDecoderMetrics:
 
         node_classification_loss = self.compute_node_type_selection_loss(
             node_type_logits=task_output.node_type_logits,
@@ -462,7 +470,7 @@ class MoLeRDecoder(tf.keras.layers.Layer):
 
         super().build(tensor_shapes)
 
-    def call(self, input: MoLeRDecoderInput, training: bool = False):
+    def call(self, input: MoLeRDecoderInput, training: bool = False) -> MoLeRDecoderOutput:
         """
         Call graph generation model for training and batch evaluation purposes, using
         teacher forcing to a correct choice to efficiently batch training.
@@ -527,11 +535,11 @@ class MoLeRDecoder(tf.keras.layers.Layer):
         else:
             attachment_point_selection_logits = None
 
-        return (
-            node_type_logits,
-            edge_candidate_logits,
-            edge_type_logits,
-            attachment_point_selection_logits,
+        return MoLeRDecoderOutput(
+            node_type_logits=node_type_logits,
+            edge_candidate_logits=edge_candidate_logits,
+            edge_type_logits=edge_type_logits,
+            attachment_point_selection_logits=attachment_point_selection_logits,
         )
 
     def calculate_node_and_graph_representations(
@@ -1118,6 +1126,7 @@ class MoLeRDecoder(tf.keras.layers.Layer):
         store_generation_traces: bool = False,
         max_num_steps: int = 120,
         beam_size: int = 1,
+        sampling_mode: DecoderSamplingMode = DecoderSamplingMode.GREEDY,
     ) -> List[MoLeRDecoderState]:
 
         """Decoding procedure for MoLeR.
@@ -1294,7 +1303,7 @@ class MoLeRDecoder(tf.keras.layers.Layer):
 
         # Step 0: Pick first node types for states that do not have an initial molecule.
         first_node_pick_results = self._decoder_pick_first_atom_types(
-            decoder_states_empty, num_samples=beam_size
+            decoder_states=decoder_states_empty, num_samples=beam_size, sampling_mode=sampling_mode
         )
 
         # print("I: Picked first node types:", [picks for picks, _ in first_node_pick_results])
@@ -1361,7 +1370,9 @@ class MoLeRDecoder(tf.keras.layers.Layer):
 
             # Step 2: For states that require a new atom, try to pick one:
             node_pick_results = self._decoder_pick_new_atom_types(
-                require_atom_states, num_samples=beam_size
+                decoder_states=require_atom_states,
+                num_samples=beam_size,
+                sampling_mode=sampling_mode,
             )
 
             for decoder_state, (node_type_picks, node_type_logprobs) in zip(
@@ -1409,7 +1420,9 @@ class MoLeRDecoder(tf.keras.layers.Layer):
                 (
                     attachment_pick_results,
                     attachment_pick_logits,
-                ) = self._decoder_pick_attachment_points(require_attachment_point_states)
+                ) = self._decoder_pick_attachment_points(
+                    decoder_states=require_attachment_point_states, sampling_mode=sampling_mode
+                )
 
                 for decoder_state, attachment_point_picks, attachment_point_logits in zip(
                     require_attachment_point_states,
@@ -1444,7 +1457,9 @@ class MoLeRDecoder(tf.keras.layers.Layer):
             # Step 3: Pick fresh bonds and populate the next round of decoding steps:
             require_bond_states = restrict_to_beam_size_per_mol(require_bond_states, beam_size)
             bond_pick_results = self._decoder_pick_new_bond_types(
-                require_bond_states, store_generation_traces=store_generation_traces
+                decoder_states=require_bond_states,
+                store_generation_traces=store_generation_traces,
+                sampling_mode=sampling_mode,
             )
             for (decoder_state, (bond_picks, edge_choice_info)) in zip(
                 require_bond_states, bond_pick_results
@@ -1497,8 +1512,9 @@ class MoLeRDecoder(tf.keras.layers.Layer):
 
     def _decoder_pick_new_atom_types(
         self,
+        *,
         decoder_states: List[MoLeRDecoderState],
-        sampling_mode: DecoderSamplingMode = DecoderSamplingMode.GREEDY,
+        sampling_mode: DecoderSamplingMode,
         num_samples: int = 1,
     ) -> Iterable[Tuple[List[Tuple[Optional[str], float]], np.ndarray]]:
         """
@@ -1595,8 +1611,9 @@ class MoLeRDecoder(tf.keras.layers.Layer):
 
     def _decoder_pick_first_atom_types(
         self,
+        *,
         decoder_states: List[MoLeRDecoderState],
-        sampling_mode: DecoderSamplingMode = DecoderSamplingMode.GREEDY,
+        sampling_mode: DecoderSamplingMode,
         num_samples: int = 1,
     ) -> Iterable[Tuple[List[Tuple[Optional[str], float]], np.ndarray]]:
         """
@@ -1674,9 +1691,10 @@ class MoLeRDecoder(tf.keras.layers.Layer):
 
     def _decoder_pick_new_bond_types(
         self,
+        *,
         decoder_states: List[MoLeRDecoderState],
+        sampling_mode: DecoderSamplingMode,
         store_generation_traces: bool = False,
-        sampling_mode: DecoderSamplingMode = DecoderSamplingMode.GREEDY,
         num_samples: int = 1,
     ) -> Iterable[
         Tuple[
@@ -1901,8 +1919,9 @@ class MoLeRDecoder(tf.keras.layers.Layer):
 
     def _decoder_pick_attachment_points(
         self,
+        *,
         decoder_states: List[MoLeRDecoderState],
-        sampling_mode: DecoderSamplingMode = DecoderSamplingMode.GREEDY,
+        sampling_mode: DecoderSamplingMode,
         num_samples: int = 1,
     ) -> Tuple[List[List[Tuple[int, float]]], List[List[float]]]:
         """

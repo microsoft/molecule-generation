@@ -4,9 +4,10 @@ from typing import Tuple, Union, Dict, Any
 
 from tf2_gnn.cli_utils.model_utils import get_model, get_model_file_path, load_weights_verbosely
 
-from molecule_generation.models.cgvae import CGVAE
-from molecule_generation.models.moler_vae import MoLeRVae
 from molecule_generation.dataset.in_memory_trace_dataset import InMemoryTraceDataset
+from molecule_generation.models.cgvae import CGVAE
+from molecule_generation.models.moler_generator import MoLeRGenerator
+from molecule_generation.models.moler_vae import MoLeRVae
 
 Pathlike = Union[str, pathlib.Path]
 
@@ -53,8 +54,8 @@ def load_vae_model_and_dataset(
     weight_file = get_model_file_path(trained_model_path, "hdf5")
     load_weights_verbosely(weight_file, model)
 
-    if not (isinstance(model, CGVAE) or isinstance(model, MoLeRVae)):
-        raise ValueError(f"Model loaded from {trained_model_path} not a CGVAE or MoLeRVae model!")
+    if not isinstance(model, (CGVAE, MoLeRVae, MoLeRGenerator)):
+        raise ValueError(f"Model loaded from {trained_model_path} not a CGVAE or MoLeR model!")
 
     return dummy_dataset, model
 

@@ -6,6 +6,7 @@ import numpy as np
 import tensorflow as tf
 from rdkit import Chem
 
+from molecule_generation.utils.moler_decoding_utils import DecoderSamplingMode
 
 Pathlike = Union[str, pathlib.Path]
 
@@ -78,6 +79,14 @@ class ModelWrapper(ContextManager):
         if inference_server is not None:
             inference_server.cleanup_workers()
 
+    @staticmethod
+    def _is_moler_model_filename(filename: str) -> bool:
+        raise NotImplementedError
+
+
+class VaeWrapper(ModelWrapper):
+    """Wrapper for MoLeRVae"""
+
     def sample_latents(self, num_samples: int) -> List[np.ndarray]:
         """Sample latent vectors from the model's prior.
 
@@ -146,3 +155,24 @@ class ModelWrapper(ContextManager):
     @staticmethod
     def _is_moler_model_filename(filename: str) -> bool:
         return "_MoLeR__" in filename
+
+
+class GeneratorWrapper(ModelWrapper):
+    """Wrapper for MoLeRGenerator model"""
+
+    def sample(self, num_samples: int) -> List[str]:
+        latents = np.zeros((num_samples, self._latent_size), dtype=np.float32)
+        return [
+            smiles_str
+            for smiles_str, _ in self._inference_server.decode(
+                latent_representations=np.stack(latents),
+                include_latent_samples=False,
+                init_mols=None,
+                beam_size=self.beam_size,
+                sampling_mode=DecoderSamplingMode.SAMPLING,
+            )
+        ]
+
+    @staticmethod
+    def _is_moler_model_filename(filename: str) -> bool:
+        return "_MoLeRGenerator__" in filename
