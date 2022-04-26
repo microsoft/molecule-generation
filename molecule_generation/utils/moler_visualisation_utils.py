@@ -47,7 +47,12 @@ class GraphGenerationVisualiser(ABC):
         pass
 
     @abstractmethod
-    def render_atom_data(self, atom_infos: List[MoleculeGenerationAtomChoiceInfo]) -> None:
+    def render_atom_data(
+        self,
+        atom_info: MoleculeGenerationAtomChoiceInfo,
+        choice_descr: str,
+        prob_threshold: float = 0.001,
+    ) -> None:
         pass
 
     @abstractmethod
@@ -132,6 +137,23 @@ class GraphGenerationVisualiser(ABC):
                 node_idx
             ]
 
+        # First, render the initial atom choice:
+        first_node_choice_one_hot_labels = batch_labels["correct_first_node_type_choices"][
+            0
+        ].numpy()
+        first_node_choice_true_type_idxs = first_node_choice_one_hot_labels.nonzero()[0]
+        first_node_choice_probs = tf.nn.softmax(predictions.first_node_type_logits[0, :]).numpy()
+
+        self.render_atom_data(
+            MoleculeGenerationAtomChoiceInfo(
+                node_idx=0,
+                true_type_idx=first_node_choice_true_type_idxs,
+                type_idx_to_prob=first_node_choice_probs,
+            ),
+            choice_descr="initial starting point",
+        )
+
+        # Now loop over each step:
         for step, focus_node_idx in enumerate(batch_features["focus_nodes"].numpy()):
             focus_node_orig_idx = partial_node_to_orig_node_id[focus_node_idx]
 
@@ -212,15 +234,14 @@ class GraphGenerationVisualiser(ABC):
                 one_hot_labels = batch_labels["correct_node_type_choices"][node_choice_idx].numpy()
                 true_type_idx = one_hot_labels.nonzero()[0]
                 self.render_atom_data(
-                    [
-                        MoleculeGenerationAtomChoiceInfo(
-                            node_idx=focus_node_orig_idx + 1,
-                            true_type_idx=true_type_idx,
-                            type_idx_to_prob=tf.nn.softmax(
-                                predictions.node_type_logits[node_choice_idx, :]
-                            ).numpy(),
-                        )
-                    ]
+                    MoleculeGenerationAtomChoiceInfo(
+                        node_idx=focus_node_orig_idx + 1,
+                        true_type_idx=true_type_idx,
+                        type_idx_to_prob=tf.nn.softmax(
+                            predictions.node_type_logits[node_choice_idx, :]
+                        ).numpy(),
+                    ),
+                    choice_descr="next addition to partial molecule",
                 )
 
     def visualise_from_samples(self, molecule_representation: np.ndarray):
@@ -268,4 +289,4 @@ class GraphGenerationVisualiser(ABC):
                 step += 1
 
             if atom is not None:
-                self.render_atom_data([atom])
+                self.render_atom_data(atom)

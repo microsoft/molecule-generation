@@ -50,46 +50,62 @@ class HTMLGraphGenerationVisualiser(GraphGenerationVisualiser):
             print(f" </tr>", file=self.__out_fh)
         print(f"</table>", file=self.__out_fh)
 
-    def render_atom_data(self, atom_infos: List[MoleculeGenerationAtomChoiceInfo]) -> None:
-        print(f"<h3>Next Atom Type</h3>", file=self.__out_fh)
-        print(f"<table>", file=self.__out_fh)
-        print(f" <tr>", file=self.__out_fh)
-        print(f"  <th>Node Id</th>", file=self.__out_fh)
-        print(f"  <th>True Type</th>", file=self.__out_fh)
-        num_atom_types = len(self.dataset._node_type_index_to_string)
-        # Skip the first type, "UNK":
-        for atom_type_idx in range(1, num_atom_types):
+    def render_atom_data(
+        self,
+        atom_info: MoleculeGenerationAtomChoiceInfo,
+        choice_descr: str,
+        prob_threshold: float = 0.001,
+    ) -> None:
+        print(f"<h3>New Atom/Motif Choice</h3>", file=self.__out_fh)
+        print(
+            f"Selecting atom/motif for {choice_descr}, based on molecule generated so far.",
+            file=self.__out_fh,
+        )
+        if prob_threshold > 0:
             print(
-                f"  <th>{self.dataset._node_type_index_to_string[atom_type_idx]}</th>",
+                f"Only showing choices with assigned probability >= {prob_threshold}.",
                 file=self.__out_fh,
             )
+
+        if atom_info.true_type_idx is not None:
+            print(f"</br>Correct choices: ", file=self.__out_fh)
+            print(
+                f", ".join(
+                    [
+                        self.dataset._node_type_index_to_string[idx]
+                        for idx in atom_info.true_type_idx
+                    ]
+                ),
+                file=self.__out_fh,
+            )
+            print(f"</br>", file=self.__out_fh)
+
+        # Show all possible choices, limited to those over threshold:
+        print(f"<table>", file=self.__out_fh)
+        print(f" <tr>", file=self.__out_fh)
+        print(f"  <th>Atom/Motif</th>", file=self.__out_fh)
+        print(f"  <th>Predicted Probability</th>", file=self.__out_fh)
         print(f" </tr>", file=self.__out_fh)
 
-        for atom_info in atom_infos:
-            print(f" <tr>", file=self.__out_fh)
-            print(f"  <td>{atom_info.node_idx}</td>", file=self.__out_fh)
+        # Skip the first type, "UNK":
+        num_atom_types = len(self.dataset._node_type_index_to_string)
+        max_prob_atom_idx = np.argmax(atom_info.type_idx_to_prob)
+        for atom_type_idx in range(1, num_atom_types):
+            atom_type_prob = atom_info.type_idx_to_prob[atom_type_idx]
             if atom_info.true_type_idx is not None:
-                print(
-                    f"  <td><b>{[self.dataset._node_type_index_to_string[idx] for idx in atom_info.true_type_idx]}</b></td>",
-                    file=self.__out_fh,
-                )
+                atom_type_is_correct = atom_type_idx in atom_info.true_type_idx
+
+            if atom_type_prob < prob_threshold and not atom_type_is_correct:
+                continue
+
+            print(f" <tr>", file=self.__out_fh)
+            atom_type_str = self.dataset._node_type_index_to_string[atom_type_idx]
+            if atom_type_idx == max_prob_atom_idx:
+                print(f"  <td><b>{atom_type_str}</b></td>", file=self.__out_fh)
+                print(f"  <td><b>{atom_type_prob:.3f}</b></td>", file=self.__out_fh)
             else:
-                print(
-                    f"  <td>n/a</td>",
-                    file=self.__out_fh,
-                )
-            max_prob_atom_idx = np.argmax(atom_info.type_idx_to_prob)
-            for atom_type_idx in range(1, num_atom_types):
-                if atom_type_idx == max_prob_atom_idx:
-                    print(
-                        f"  <td><b>{atom_info.type_idx_to_prob[atom_type_idx]:.3f}</b></td>",
-                        file=self.__out_fh,
-                    )
-                else:
-                    print(
-                        f"  <td>{atom_info.type_idx_to_prob[atom_type_idx]:.3f}</td>",
-                        file=self.__out_fh,
-                    )
+                print(f"  <td>{atom_type_str}</td>", file=self.__out_fh)
+                print(f"  <td>{atom_type_prob:.3f}</td>", file=self.__out_fh)
             print(f" </tr>", file=self.__out_fh)
         print(f"</table>", file=self.__out_fh)
 

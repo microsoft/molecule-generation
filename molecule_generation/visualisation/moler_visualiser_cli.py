@@ -1,7 +1,7 @@
 import argparse
 import os
 import pickle
-from typing import List, Dict
+from typing import Dict
 
 import numpy as np
 from rdkit import Chem
@@ -27,24 +27,31 @@ class TextGraphGenerationVisualiser(GraphGenerationVisualiser):
             else:
                 print(f" (True = {prop_info.ground_truth:7.3f})")
 
-    def render_atom_data(self, atom_infos: List[MoleculeGenerationAtomChoiceInfo]) -> None:
-        print("  - Node choices")
-        num_atom_types = len(self.dataset._node_type_index_to_string)
-        for atom_info in atom_infos:
-            node_type_strs = [
-                f"{self.dataset._node_type_index_to_string[node_typ_idx]}:"
-                f" {atom_info.type_idx_to_prob[node_typ_idx]:.3f}"
-                # Skip the first type, "UNK":
-                for node_typ_idx in range(1, num_atom_types)
-            ]
-            if atom_info.true_type_idx is not None:
-                true_node_type_info = f" (True: {[self.dataset._node_type_index_to_string[idx] for idx in atom_info.true_type_idx]})"
-            else:
-                true_node_type_info = ""
-
-            print(
-                f"    Node {atom_info.node_idx:2}{true_node_type_info}:\t{', '.join(node_type_strs)}"
+    def render_atom_data(
+        self,
+        atom_info: MoleculeGenerationAtomChoiceInfo,
+        choice_descr: str,
+        prob_threshold: float = 0.001,
+    ) -> None:
+        print(f"  - Atom/motif choices for {choice_descr}")
+        if atom_info.true_type_idx is not None:
+            correct_choices_str = ", ".join(
+                [self.dataset._node_type_index_to_string[idx] for idx in atom_info.true_type_idx]
             )
+            print(f"    Correct: {correct_choices_str}")
+
+        # Skip the first type, "UNK":
+        num_atom_types = len(self.dataset._node_type_index_to_string)
+        for atom_type_idx in range(1, num_atom_types):
+            atom_type_prob = atom_info.type_idx_to_prob[atom_type_idx]
+            if atom_info.true_type_idx is not None:
+                atom_type_is_correct = atom_type_idx in atom_info.true_type_idx
+
+            if atom_type_prob < prob_threshold and not atom_type_is_correct:
+                continue
+
+            atom_type_str = self.dataset._node_type_index_to_string[atom_type_idx]
+            print(f"     {atom_type_prob:.3f} - {atom_type_str}")
 
     def render_attachment_point_selection_step(
         self, step: int, attachment_point_info: MoleculeGenerationAttachmentPointChoiceInfo
@@ -66,7 +73,7 @@ class TextGraphGenerationVisualiser(GraphGenerationVisualiser):
             print(f"    Node {candidate:2}: prob {prob:.3f} {correctness_info}")
 
     def render_molecule_gen_start(self, mol: Chem.Mol) -> None:
-        print(f"= Edge Steps to create {Chem.MolToSmiles(mol)}")
+        print(f"= Steps to create {Chem.MolToSmiles(mol)}")
 
     def render_molecule_gen_edge_step(
         self, step: int, step_info: MoleculeGenerationEdgeChoiceInfo
