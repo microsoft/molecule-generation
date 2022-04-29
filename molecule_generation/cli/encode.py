@@ -2,7 +2,7 @@
 import argparse
 import pickle
 
-from molecule_generation import ModelWrapper
+from molecule_generation import VaeWrapper
 from molecule_generation.utils.cli_utils import (
     get_model_loading_parser,
     setup_logging,
@@ -18,7 +18,7 @@ def save_smiles_embeddings(
 
     print(f"Read {len(smiles_list)} SMILES strings.")
 
-    with ModelWrapper(model_dir, **model_kwargs) as model:
+    with VaeWrapper(model_dir, **model_kwargs) as model:
         embeddings = model.encode(smiles_list)
 
     with open(output_path, "wb+") as f:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 
-from molecule_generation import ModelWrapper
+from molecule_generation import VaeWrapper
 from molecule_generation.utils.cli_utils import (
     get_model_loading_parser,
     setup_logging,
@@ -10,7 +10,7 @@ from molecule_generation.utils.cli_utils import (
 
 
 def print_samples(model_dir: str, num_samples: int, **model_kwargs) -> None:
-    with ModelWrapper(model_dir, **model_kwargs) as model:
+    with VaeWrapper(model_dir, **model_kwargs) as model:
         samples = model.sample(num_samples)
 
     print("\n".join(samples))
