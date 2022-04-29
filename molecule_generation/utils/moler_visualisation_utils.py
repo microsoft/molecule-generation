@@ -16,7 +16,7 @@ from molecule_generation.layers.moler_decoder import (
 )
 from molecule_generation.models.moler_vae import MoLeRVaeOutput
 from molecule_generation.utils.model_utils import load_vae_model_and_dataset
-from molecule_generation.wrapper import ModelWrapper
+from molecule_generation.wrapper import VaeWrapper
 
 
 class PropertyPredictionInformation(NamedTuple):
@@ -32,7 +32,7 @@ class AtomPredictionInformation(NamedTuple):
 
 class GraphGenerationVisualiser(ABC):
     def __init__(self, model_dir: str):
-        dataset, vae = load_vae_model_and_dataset(ModelWrapper._get_model_file(model_dir))
+        dataset, vae = load_vae_model_and_dataset(VaeWrapper._get_model_file(model_dir))
         self.dataset = dataset
         self.dataset.params[
             "trace_element_keep_prob"
