@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/microsoft/molecule-generation/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/microsoft/molecule-generation/actions/workflows/ci.yml)
 [![license](https://img.shields.io/github/license/microsoft/molecule-generation.svg)](https://github.com/microsoft/molecule-generation/blob/main/LICENSE)
+[![pypi](https://img.shields.io/pypi/v/molecule-generation.svg)](https://pypi.org/project/molecule-generation/)
 [![code style](https://img.shields.io/badge/code%20style-black-202020.svg)](https://github.com/ambv/black)
 
 This repository contains training and inference code for the MoLeR model introduced in [Learning to Extend Molecular Scaffolds with Structural Motifs](https://arxiv.org/abs/2103.03864). We also include our implementation of CGVAE, but it currently lacks integration with the high-level model interface, and is provided mostly for reference.
