@@ -17,7 +17,12 @@ conda activate moler-env
 conda install rdkit==2020.09.1.0 -c conda-forge
 ```
 
-Then, to install `molecule_generation`, simply run `pip install -e .` within the root folder.
+Then, to install the latest release of `molecule_generation`, simply run
+```bash
+pip install molecule-generation
+```
+
+Alternatively, running `pip install -e .` within the root folder installs the latest state of the code, including changes that were merged into `main` but not yet released.
 
 Note that in the instructions above we pinned the `rdkit` version, as this is the version the code has been tested with. However, our code is likely to work with other modern version of `rdkit` as well.
 
