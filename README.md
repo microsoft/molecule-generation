@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/microsoft/molecule-generation/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/microsoft/molecule-generation/actions/workflows/ci.yml)
 [![license](https://img.shields.io/github/license/microsoft/molecule-generation.svg)](https://github.com/microsoft/molecule-generation/blob/main/LICENSE)
+[![pypi](https://img.shields.io/pypi/v/molecule-generation.svg)](https://pypi.org/project/molecule-generation/)
 [![code style](https://img.shields.io/badge/code%20style-black-202020.svg)](https://github.com/ambv/black)
 
 This repository contains training and inference code for the MoLeR model introduced in [Learning to Extend Molecular Scaffolds with Structural Motifs](https://arxiv.org/abs/2103.03864). We also include our implementation of CGVAE, but it currently lacks integration with the high-level model interface, and is provided mostly for reference.
@@ -16,7 +17,12 @@ conda activate moler-env
 conda install rdkit==2020.09.1.0 -c conda-forge
 ```
 
-Then, to install `molecule_generation`, simply run `pip install -e .` within the root folder.
+Then, to install the latest release of `molecule_generation`, simply run
+```bash
+pip install molecule-generation
+```
+
+Alternatively, running `pip install -e .` within the root folder installs the latest state of the code, including changes that were merged into `main` but not yet released.
 
 Note that in the instructions above we pinned the `rdkit` version, as this is the version the code has been tested with. However, our code is likely to work with other modern version of `rdkit` as well.
 
