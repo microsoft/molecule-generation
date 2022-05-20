@@ -154,7 +154,7 @@ class FeaturisedData:
         len_valid_data: int,
         test_data: Iterable[Dict[str, Any]],
         len_test_data: int,
-        atom_feature_extractors: List[AtomFeatureExtractor],
+        atom_feature_extractors: Optional[List[AtomFeatureExtractor]] = None,
         featuriser_data: Optional[Iterable[Dict[str, Any]]] = None,
         len_featurizer_data: Optional[int] = None,
         motif_extraction_settings: Optional[MotifExtractionSettings] = None,
@@ -223,8 +223,8 @@ def featurise_smiles_datapoints(
     train_data: List[Dict[str, Any]],
     valid_data: List[Dict[str, Any]],
     test_data: List[Dict[str, Any]],
-    atom_feature_extractors: List[AtomFeatureExtractor],
-    temporary_save_directory: RichPath = None,
+    atom_feature_extractors: Optional[List[AtomFeatureExtractor]] = None,
+    temporary_save_directory: Optional[RichPath] = None,
     motif_extraction_settings: Optional[MotifExtractionSettings] = None,
     num_processes: int = 8,
     include_fingerprints: bool = False,
@@ -245,10 +245,11 @@ def featurise_smiles_datapoints(
         temporary_save_directory: an (optional) directory to cache intermediate results to
             reduce unnecessary recalculation. If used, should be manually cleared if any changes
             have been made to the _smiles_to_mols function.
+        motif_extraction_settings: settings to use for extracting the vocabulary.
         num_processes: number of parallel worker processes to use for processing.
 
     Returns:
-        A FeaturisedData tuple.
+        A `FeaturisedData` object.
     """
     tmp_train_path, tmp_test_path, tmp_valid_path = None, None, None
     if temporary_save_directory is not None:
@@ -488,7 +489,7 @@ def molecule_to_graph(
 
 def _lazy_smiles_to_mols(
     datapoints: Iterable[Dict[str, Any]],
-    save_path: RichPath = None,
+    save_path: Optional[RichPath] = None,
     num_processes: int = 8,
     include_fingerprints: bool = True,
     include_descriptors: bool = True,
@@ -525,7 +526,7 @@ def _lazy_smiles_to_mols(
 
 def smiles_to_mols(
     datapoints: List[Dict[str, Any]],
-    save_path: RichPath = None,
+    save_path: Optional[RichPath] = None,
     num_processes: int = 8,
     include_fingerprints: bool = True,
     include_descriptors: bool = True,
