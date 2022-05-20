@@ -58,13 +58,14 @@ def compute_smiles_dataset_metadata(
     data_len: Optional[int] = None,
     quiet: bool = False,
     atom_feature_extractors: Optional[List[AtomFeatureExtractor]] = None,
+    motif_vocabulary: Optional[MotifVocabulary] = None,
     motif_extraction_settings: Optional[MotifExtractionSettings] = None,
 ) -> Tuple[List[AtomFeatureExtractor], Optional[MotifVocabulary]]:
-    """Given a dataset of molecules, compute metadata (such as atom featuriser vocabularies,
-    motif vocabularies).
-    """
+    """Compute metadata (atom featurisers and motif vocabularies) from a dataset of molecules."""
 
-    if atom_feature_extractors is None:
+    featurisers_provided = atom_feature_extractors is not None
+
+    if not featurisers_provided:
         uninitialised_featurisers = get_default_atom_featurisers()
         atom_feature_extractors = uninitialised_featurisers
     else:
@@ -74,27 +75,45 @@ def compute_smiles_dataset_metadata(
             if not featuriser.metadata_initialised
         ]
 
-    if motif_extraction_settings is not None:
-        motif_vocabulary_extractor = MotifVocabularyExtractor(motif_extraction_settings)
-        logger.info("Initialising feature extractors and motif vocabulary.")
-    else:
-        motif_vocabulary: Optional[MotifVocabulary] = None
-        if len(uninitialised_featurisers) == 0:
-            return atom_feature_extractors, motif_vocabulary
+    need_to_init_featurisers = len(uninitialised_featurisers) > 0
+    need_to_init_motifs = motif_vocabulary is None and motif_extraction_settings is not None
 
-        logger.info("Initialising feature extractors.")
+    if not need_to_init_featurisers:
+        featurisers_descr = "provided and marked as final [action: none]"
+    elif featurisers_provided:
+        featurisers_descr = "provided but not marked as final [action: update]"
+    else:
+        featurisers_descr = "not provided [action: compute]"
+
+    if need_to_init_motifs:
+        motifs_descr = "not provided and enabled [action: compute]"
+    elif motif_vocabulary is not None:
+        motifs_descr = "provided [action: none]"
+    else:
+        motifs_descr = "disabled [action: none]"
+
+    logger.info("Building dataset metadata")
+    logger.info(f"| Atom featurisers: {featurisers_descr}")
+    logger.info(f"| Motif vocabulary: {motifs_descr}")
+
+    # Finish early if there is nothing to do.
+    if not (need_to_init_featurisers or need_to_init_motifs):
+        return atom_feature_extractors, motif_vocabulary
+
+    if need_to_init_motifs:
+        motif_vocabulary_extractor = MotifVocabularyExtractor(motif_extraction_settings)
 
     for datapoint in tqdm(mol_data, total=data_len, disable=quiet):
         mol = datapoint["mol"]
 
-        if motif_extraction_settings is not None:
+        if need_to_init_motifs:
             motif_vocabulary_extractor.update(mol)
 
         for atom in mol.GetAtoms():
             for featuriser in uninitialised_featurisers:
                 featuriser.prepare_metadata(atom)
 
-    if motif_extraction_settings is not None:
+    if need_to_init_motifs:
         motif_vocabulary = motif_vocabulary_extractor.output()
 
     for featuriser in uninitialised_featurisers:
@@ -157,6 +176,7 @@ class FeaturisedData:
         atom_feature_extractors: Optional[List[AtomFeatureExtractor]] = None,
         featuriser_data: Optional[Iterable[Dict[str, Any]]] = None,
         len_featurizer_data: Optional[int] = None,
+        motif_vocabulary: Optional[MotifVocabulary] = None,
         motif_extraction_settings: Optional[MotifExtractionSettings] = None,
         quiet: bool = False,
     ):
@@ -177,6 +197,7 @@ class FeaturisedData:
             data_len=len_featurizer_data,
             quiet=quiet,
             atom_feature_extractors=atom_feature_extractors,
+            motif_vocabulary=motif_vocabulary,
             motif_extraction_settings=motif_extraction_settings,
         )
 
@@ -225,6 +246,7 @@ def featurise_smiles_datapoints(
     test_data: List[Dict[str, Any]],
     atom_feature_extractors: Optional[List[AtomFeatureExtractor]] = None,
     temporary_save_directory: Optional[RichPath] = None,
+    motif_vocabulary: Optional[MotifVocabulary] = None,
     motif_extraction_settings: Optional[MotifExtractionSettings] = None,
     num_processes: int = 8,
     include_fingerprints: bool = False,
@@ -245,12 +267,18 @@ def featurise_smiles_datapoints(
         temporary_save_directory: an (optional) directory to cache intermediate results to
             reduce unnecessary recalculation. If used, should be manually cleared if any changes
             have been made to the _smiles_to_mols function.
+        motif_vocabulary: an optional motif vocabulary to use instead of extracting one afresh.
         motif_extraction_settings: settings to use for extracting the vocabulary.
         num_processes: number of parallel worker processes to use for processing.
 
     Returns:
         A `FeaturisedData` object.
     """
+    if motif_vocabulary is not None and motif_extraction_settings is not None:
+        logger.warning(
+            "Motif vocabulary was already provided, so extraction settings will be ignored."
+        )
+
     tmp_train_path, tmp_test_path, tmp_valid_path = None, None, None
     if temporary_save_directory is not None:
         temporary_save_directory.make_as_dir()
@@ -312,6 +340,7 @@ def featurise_smiles_datapoints(
         atom_feature_extractors=atom_feature_extractors,
         featuriser_data=featuriser_data_iter,
         len_featurizer_data=len_train_data,
+        motif_vocabulary=motif_vocabulary,
         motif_extraction_settings=motif_extraction_settings,
         quiet=quiet,
     )
