@@ -46,6 +46,8 @@ class TextGraphGenerationVisualiser(GraphGenerationVisualiser):
             atom_type_prob = atom_info.type_idx_to_prob[atom_type_idx]
             if atom_info.true_type_idx is not None:
                 atom_type_is_correct = atom_type_idx in atom_info.true_type_idx
+            else:
+                atom_type_is_correct = False
 
             if atom_type_prob < prob_threshold and not atom_type_is_correct:
                 continue

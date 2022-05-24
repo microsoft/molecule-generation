@@ -273,6 +273,8 @@ class GraphGenerationVisualiser(ABC):
         assert len(decoder_states.attachment_point_selection_steps) == num_atom_selection_steps
 
         step = 1
+        first_step_done = False
+
         for atom, edge, attachment_point in zip(
             decoder_states.atom_selection_steps,
             decoder_states.edge_selection_steps,
@@ -289,4 +291,20 @@ class GraphGenerationVisualiser(ABC):
                 step += 1
 
             if atom is not None:
-                self.render_atom_data(atom)
+                # `atom.type_idx_to_prob` already comes without the `UNK` atom type, but we try to
+                # strip it later downstream. We hack things here and add a zero logit for `UNK` (the
+                # exact value doesn't matter as it gets removed anyway).
+                self.render_atom_data(
+                    MoleculeGenerationAtomChoiceInfo(
+                        node_idx=atom.node_idx,
+                        true_type_idx=atom.true_type_idx,
+                        type_idx_to_prob=np.concatenate(([0.0], atom.type_idx_to_prob)),
+                    ),
+                    choice_descr=(
+                        "next addition to partial molecule"
+                        if first_step_done
+                        else "initial starting point"
+                    ),
+                )
+
+            first_step_done = True
