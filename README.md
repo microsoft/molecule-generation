@@ -26,7 +26,7 @@ Alternatively, running `pip install -e .` within the root folder installs the la
 
 Note that in the instructions above we pinned the `rdkit` version, as this is the version the code has been tested with. However, our code is likely to work with other modern version of `rdkit` as well.
 
-A MoLeR checkpoint trained using the default hyperparameters is available [here](https://figshare.com/ndownloader/files/34642724). If you save it under `MODEL_DIR`, then you can sample 10 molecules by running
+A MoLeR checkpoint trained using the default hyperparameters is available [here](https://figshare.com/ndownloader/files/34642724). This file needs to be saved in a fresh folder `MODEL_DIR` (e.g., `/tmp/MoLeR_checkpoint`) and be renamed to have the `.pkl` ending (e.g., to `GNN_Edge_MLP_MoLeR__2022-02-24_07-16-23_best.pkl`). Then you can sample 10 molecules by running
 
 ```bash
 molecule_generation sample MODEL_DIR 10
