@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import List, Dict, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -70,6 +70,40 @@ class GraphGenerationVisualiser(ABC):
         self, step: int, attachment_point_info: MoleculeGenerationAttachmentPointChoiceInfo
     ) -> None:
         pass
+
+    def get_atom_and_motif_types_to_render(
+        self, atom_info: MoleculeGenerationAtomChoiceInfo, prob_threshold: float
+    ) -> List[Tuple[int, float, str]]:
+        """Extract atom and motif types that are useful to render.
+
+        Args:
+            atom_info: Atom/motif choice step produced by the decoder.
+            prob_threshold: Incorrect atom/motif types with probability lower than this threshold
+                will not be rendered.
+
+        Returns:
+            A list of tuples corresponding to the selected atom/motif types. Each tuple consists of:
+            an index into the lists in `atom_info`, the corresponding probability from the decoder,
+            and a description string (either atom type or motif SMILES).
+        """
+        types_to_render: List[Tuple[int, float, str]] = []
+
+        # Skip the first type (which we assume to be "UNK"):
+        num_types = len(self.dataset._node_type_index_to_string)
+        for type_idx in range(1, num_types):
+            prob = atom_info.type_idx_to_prob[type_idx]
+            if atom_info.true_type_idx is not None:
+                is_correct = type_idx in atom_info.true_type_idx
+            else:
+                is_correct = False
+
+            if prob >= prob_threshold or is_correct:
+                types_to_render.append(
+                    (type_idx, prob, self.dataset._node_type_index_to_string[type_idx])
+                )
+
+        # Sort in the order of decreasing probability.
+        return sorted(types_to_render, key=lambda t: t[1], reverse=True)
 
     def visualise_from_smiles(self, smiles: str):
         # First, load the raw sample and run the model on it

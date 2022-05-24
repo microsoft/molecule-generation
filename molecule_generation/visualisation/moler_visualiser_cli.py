@@ -40,20 +40,8 @@ class TextGraphGenerationVisualiser(GraphGenerationVisualiser):
             )
             print(f"    Correct: {correct_choices_str}")
 
-        # Skip the first type, "UNK":
-        num_atom_types = len(self.dataset._node_type_index_to_string)
-        for atom_type_idx in range(1, num_atom_types):
-            atom_type_prob = atom_info.type_idx_to_prob[atom_type_idx]
-            if atom_info.true_type_idx is not None:
-                atom_type_is_correct = atom_type_idx in atom_info.true_type_idx
-            else:
-                atom_type_is_correct = False
-
-            if atom_type_prob < prob_threshold and not atom_type_is_correct:
-                continue
-
-            atom_type_str = self.dataset._node_type_index_to_string[atom_type_idx]
-            print(f"     {atom_type_prob:.3f} - {atom_type_str}")
+        for _, prob, descr in self.get_atom_and_motif_types_to_render(atom_info, prob_threshold):
+            print(f"     {prob:.3f} - {descr}")
 
     def render_attachment_point_selection_step(
         self, step: int, attachment_point_info: MoleculeGenerationAttachmentPointChoiceInfo

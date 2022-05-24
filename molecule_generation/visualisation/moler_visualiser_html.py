@@ -80,6 +80,8 @@ class HTMLGraphGenerationVisualiser(GraphGenerationVisualiser):
             )
             print(f"</br>", file=self.__out_fh)
 
+        print(f"</br>", file=self.__out_fh)
+
         # Show all possible choices, limited to those over threshold:
         print(f"<table>", file=self.__out_fh)
         print(f" <tr>", file=self.__out_fh)
@@ -87,27 +89,15 @@ class HTMLGraphGenerationVisualiser(GraphGenerationVisualiser):
         print(f"  <th>Predicted Probability</th>", file=self.__out_fh)
         print(f" </tr>", file=self.__out_fh)
 
-        # Skip the first type, "UNK":
-        num_atom_types = len(self.dataset._node_type_index_to_string)
         max_prob_atom_idx = np.argmax(atom_info.type_idx_to_prob)
-        for atom_type_idx in range(1, num_atom_types):
-            atom_type_prob = atom_info.type_idx_to_prob[atom_type_idx]
-            if atom_info.true_type_idx is not None:
-                atom_type_is_correct = atom_type_idx in atom_info.true_type_idx
-            else:
-                atom_type_is_correct = False
-
-            if atom_type_prob < prob_threshold and not atom_type_is_correct:
-                continue
-
+        for idx, prob, descr in self.get_atom_and_motif_types_to_render(atom_info, prob_threshold):
             print(f" <tr>", file=self.__out_fh)
-            atom_type_str = self.dataset._node_type_index_to_string[atom_type_idx]
-            if atom_type_idx == max_prob_atom_idx:
-                print(f"  <td><b>{atom_type_str}</b></td>", file=self.__out_fh)
-                print(f"  <td><b>{atom_type_prob:.3f}</b></td>", file=self.__out_fh)
+            if idx == max_prob_atom_idx:
+                print(f"  <td><b>{descr}</b></td>", file=self.__out_fh)
+                print(f"  <td><b>{prob:.3f}</b></td>", file=self.__out_fh)
             else:
-                print(f"  <td>{atom_type_str}</td>", file=self.__out_fh)
-                print(f"  <td>{atom_type_prob:.3f}</td>", file=self.__out_fh)
+                print(f"  <td>{descr}</td>", file=self.__out_fh)
+                print(f"  <td>{prob:.3f}</td>", file=self.__out_fh)
             print(f" </tr>", file=self.__out_fh)
         print(f"</table>", file=self.__out_fh)
 
