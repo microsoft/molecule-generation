@@ -321,7 +321,7 @@ class HTMLGraphGenerationVisualiser(GraphGenerationVisualiser):
             self.__out_fh = out_fh
             print(f"<html><head><title>Generation of {smiles}</title></head>", file=self.__out_fh)
             print(f"<body>", file=self.__out_fh)
-            print(f"<h1>Visualisation of CG-VAE generation of {smiles}</h1>", file=self.__out_fh)
+            print(f"<h1>Visualisation of MoLeR generation of {smiles}</h1>", file=self.__out_fh)
             super().visualise_from_smiles(smiles)
             print(f"</body>", file=self.__out_fh)
 
@@ -341,7 +341,7 @@ class HTMLGraphGenerationVisualiser(GraphGenerationVisualiser):
             )
             print(f"<body>", file=self.__out_fh)
             print(
-                f"<h1>Visualisation of CG-VAE generation from latents in {latents_path}</h1>",
+                f"<h1>Visualisation of MoLeR generation from latents in {latents_path}</h1>",
                 file=self.__out_fh,
             )
             super().visualise_from_samples(node_representations)
