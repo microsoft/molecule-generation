@@ -45,11 +45,11 @@ class ModelWrapper(ContextManager):
         Raises:
             ValueError, if the model pickle is not found or is not unique.
         """
-        # All candidate files must end with "_best.pkl"
-        candidates = list(pathlib.Path(dir).glob("*_best.pkl"))
+        # Candidate files must end with ".pkl"
+        candidates = list(pathlib.Path(dir).glob("*.pkl"))
         if len(candidates) != 1:
             raise ValueError(
-                f"There must be exactly one file matching the pattern. Found the following: {candidates}."
+                f"There must be exactly one *.pkl file. Found the following: {candidates}."
             )
         else:
             return candidates[0]
