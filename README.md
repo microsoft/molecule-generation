@@ -142,21 +142,23 @@ In all cases `MODEL_DIR` denotes the directory containing the model checkpoint, 
 You can also load a trained MoLeR model directly from Python via
 
 ```python
-from molecule_generation import VaeWrapper
+from molecule_generation import load_model_from_directory
 
 model_dir = "./example_model_directory"
 example_smiles = ["c1ccccc1", "CNC=O"]
 
-with VaeWrapper(model_dir) as model:
+with load_model_from_directory(model_dir) as model:
     embeddings = model.encode(example_smiles)
     print(f"Embedding shape: {embeddings[0].shape}")
     decoded_smiles = model.decode(embeddings)
     print(f"Encoded: {example_smiles}, decoded: {decoded_smiles}")
 ```
 
-As shown above, MoLeR is loaded through a context manager. Behind the scenes, entering the context spawns parallel 
-processes which await queries for encoding/decoding; these processes continue to live as long as the context is active. 
-The degree of paralellism can be configured by passing a `num_workers` argument to `VaeWrapper`.
+As shown above, MoLeR is loaded through a context manager.
+Behind the scenes, the following things happen:
+- First, an appropriate wrapper class is chosen: if the provided directory contains a `MoLeRVae` checkpoint, the returned wrapper will support `encode`, `decode` and `sample`, while `MoLeRGenerator` will only support `sample`.
+- Next, parallel workers are spawned, which await queries for encoding/decoding; these processes continue to live as long as the context is active.
+The degree of paralellism can be configured using a `num_workers` argument.
 
 ### Visualisation
 

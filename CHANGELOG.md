@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `MoLeRGenerator`, which uses the MoLeR decoder (without the encoder) as an autoregressive policy ([#6](https://github.com/microsoft/molecule-generation/pull/6))
+- `load_model_from_directory`, which can load any model by automatically picking the right wrapper class (either `VaeWrapper` or `GeneratorWrapper`) ([#24](https://github.com/microsoft/molecule-generation/pull/24))
 
 ### Changed
 - Improved how the MoLeR visualisers handle node selection steps and fixed the "visualise from latents" mode ([#10](https://github.com/microsoft/molecule-generation/pull/10))

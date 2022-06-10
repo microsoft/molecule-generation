@@ -66,3 +66,10 @@ def get_model_parameters(trained_model_path: Pathlike) -> Dict[str, Any]:
         # get_model_file_path takes `str` as input, so we need to cast it
         data_to_load = pickle.load(in_file)
     return data_to_load.get("model_params", {})
+
+
+def get_model_class(trained_model_path: Pathlike) -> type:
+    """Returns model class from a given pickle path."""
+    with open(get_model_file_path(str(trained_model_path), "pkl"), "rb") as in_file:
+        data_to_load = pickle.load(in_file)
+    return data_to_load.get("model_class")
