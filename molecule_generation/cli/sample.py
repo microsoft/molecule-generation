@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import argparse
 
+from molecule_generation import load_model_from_directory
 from molecule_generation.utils.cli_utils import (
     get_model_loading_parser,
     setup_logging,
     supress_tensorflow_warnings,
 )
-from molecule_generation.wrapper import load_model_from_directory
 
 
 def print_samples(model_dir: str, num_samples: int, **model_kwargs) -> None:
