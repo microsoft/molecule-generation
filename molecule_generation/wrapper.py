@@ -1,6 +1,6 @@
 import pathlib
 import random
-from typing import ContextManager, List, Optional, Union
+from typing import ContextManager, List, Optional, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
@@ -91,16 +91,25 @@ class VaeWrapper(ModelWrapper):
         """
         return np.random.normal(size=(num_samples, self._latent_size)).astype(np.float32)
 
-    def encode(self, smiles_list: List[str]) -> List[np.ndarray]:
+    def encode(
+        self, smiles_list: List[str], include_log_variances: bool = False
+    ) -> Union[List[np.ndarray], List[Tuple[np.ndarray, np.ndarray]]]:
         """Encode input molecules to vectors in the latent space.
 
         Args:
-            smiles_list: List of molecules as SMILES
+            smiles_list: List of molecules as SMILES.
+            include_log_variances: Whether to also return log variances on the latent encodings.
 
         Returns:
-            List of latent vectors.
+            List of results. Each result is the mean latent encoding if `include_log_variances` is
+            `False`, and a pair containing the mean and the corresponding log variance otherwise.
         """
-        return self._inference_server.encode(smiles_list)
+        # Note: if we ever start being strict about type hints, we could properly express the
+        # relationship between `include_log_variances` and the return type using `@overload`.
+
+        return self._inference_server.encode(
+            smiles_list, include_log_variances=include_log_variances
+        )
 
     def decode(
         self,

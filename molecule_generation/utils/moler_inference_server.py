@@ -27,7 +27,12 @@ class MoLeRRequestType(enum.Enum):
     DECODE = enum.auto()
 
 
-def _encode_from_smiles(dataset: InMemoryTraceDataset, model: MoLeRVae, smiles_list: List[str]):
+def _encode_from_smiles(
+    dataset: InMemoryTraceDataset,
+    model: MoLeRVae,
+    smiles_list: List[str],
+    include_log_variances: bool = False,
+):
     # First, parse / load SMILES strings into the dataset:
     datapoints = []
     for smiles_str in smiles_list:
@@ -51,11 +56,12 @@ def _encode_from_smiles(dataset: InMemoryTraceDataset, model: MoLeRVae, smiles_l
     for batch_features, _ in dataset.get_tensorflow_dataset(
         data_fold=DataFold.TEST, use_worker_threads=False
     ):
-        # print(f"Encoding batch of size {batch_features['num_graphs_in_batch']}")
         final_node_representations = model.compute_final_node_representations(
             batch_features, training=False
         )
-        (graph_representation_mean, _, _,) = model.compute_latent_molecule_representations(
+
+        # Get means and log variances, both with shape [NumGraphsInBatch, LatentDim].
+        (graph_rep_mean, graph_rep_logvar, _,) = model.compute_latent_molecule_representations(
             final_node_representations=final_node_representations,
             num_graphs=batch_features["num_graphs_in_batch"],
             node_to_graph_map=batch_features["node_to_graph_map"],
@@ -65,8 +71,10 @@ def _encode_from_smiles(dataset: InMemoryTraceDataset, model: MoLeRVae, smiles_l
             training=False,
         )
 
-        gnn_output = graph_representation_mean.numpy()  # Shape [NumGraphsInBatch, LatentDim]
-        result.extend(list(gnn_output))
+        if include_log_variances:
+            result.extend(zip(graph_rep_mean.numpy(), graph_rep_logvar.numpy()))
+        else:
+            result.extend(graph_rep_mean.numpy())
 
     return result
 
@@ -113,9 +121,10 @@ def _moler_worker_process(
             output_queue.put((uid, []))
             return
         elif request == MoLeRRequestType.ENCODE:
-            smiles: Union[str, List[str]] = arguments
-            smiles_list = smiles if isinstance(smiles, list) else [smiles]
-            encoded_mols = _encode_from_smiles(dataset, moler_model, smiles_list)
+            smiles_list, include_log_variances = arguments
+            encoded_mols = _encode_from_smiles(
+                dataset, moler_model, smiles_list, include_log_variances=include_log_variances
+            )
             output_queue.put((uid, encoded_mols))
         elif request == MoLeRRequestType.DECODE:
             (
@@ -236,16 +245,17 @@ class MoLeRInferenceServer(object):
         self.cleanup_workers(ignore_failures=True)
         return False  # Signal that exceptions should be re-raised, if needed
 
-    def encode(self, smiles: Union[str, List[str]]):
+    def encode(self, smiles_list: List[str], include_log_variances: bool = False):
         self.init_workers()
 
-        smiles_list = smiles if isinstance(smiles, list) else [smiles]
         # Issue all requests to the workers, and prepare results array to hold them:
         # Choose chunk size such that all workers have something to do:
         chunk_size = min(self._max_num_samples_per_chunk, len(smiles_list) // self._num_workers + 1)
         results: List[Any] = []
         for smiles_chunk in chunked(smiles_list, chunk_size):
-            self._request_queue.put((MoLeRRequestType.ENCODE, len(results), smiles_chunk))
+            self._request_queue.put(
+                (MoLeRRequestType.ENCODE, len(results), (smiles_chunk, include_log_variances))
+            )
             results.append(None)
 
         # Collect results and put them back into order, before returning them as one long list:
