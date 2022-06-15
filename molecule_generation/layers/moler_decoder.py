@@ -1287,6 +1287,7 @@ class MoLeRDecoder(tf.keras.layers.Layer):
                     focus_atom=None,
                     # Pseudo-randomly pick last atom from input:
                     prior_focus_atom=len(init_atom_types) - 1,
+                    generation_steps=[] if store_generation_traces else None,
                     motifs=init_mol_motifs,
                     num_free_bond_slots=num_free_bond_slots,
                 )
@@ -1429,28 +1430,26 @@ class MoLeRDecoder(tf.keras.layers.Layer):
                     attachment_pick_results,
                     attachment_pick_logits,
                 ):
-                    attachment_point_choice_info = MoleculeGenerationAttachmentPointChoiceInfo(
-                        partial_molecule_adjacency_lists=decoder_state.adjacency_lists,
-                        motif_nodes=decoder_state.atoms_to_mark_as_visited,
-                        candidate_attachment_points=decoder_state.candidate_attachment_points,
-                        candidate_idx_to_prob=tf.nn.softmax(attachment_point_logits),
-                        correct_attachment_point_idx=None,
-                    )
-
                     for (attachment_point_pick, attachment_point_logprob) in attachment_point_picks:
-                        # print(I {decoder_state.molecule_id} {decoder_state.logprob:12f}: Picked attachment point {attachment_point_pick} - p={attachment_point_logprob:5f}")
-                        new_decoder_state = MoLeRDecoderState.new_with_changed_focus_atom(
-                            decoder_state,
-                            attachment_point_pick,
-                            focus_atom_logprob=attachment_point_logprob,
-                        )
-                        new_decoder_state._atom_selection_steps.append(None)
-                        new_decoder_state._edge_selection_steps.append(None)
-                        new_decoder_state._attachment_point_selection_steps.append(
-                            attachment_point_choice_info
-                        )
+                        attachment_point_choice_info = None
+                        if store_generation_traces:
+                            attachment_point_choice_info = MoleculeGenerationAttachmentPointChoiceInfo(
+                                partial_molecule_adjacency_lists=decoder_state.adjacency_lists,
+                                motif_nodes=decoder_state.atoms_to_mark_as_visited,
+                                candidate_attachment_points=decoder_state.candidate_attachment_points,
+                                candidate_idx_to_prob=tf.nn.softmax(attachment_point_logits),
+                                correct_attachment_point_idx=None,
+                            )
 
-                        require_bond_states.append(new_decoder_state)
+                        # print(I {decoder_state.molecule_id} {decoder_state.logprob:12f}: Picked attachment point {attachment_point_pick} - p={attachment_point_logprob:5f}")
+                        require_bond_states.append(
+                            MoLeRDecoderState.new_with_focus_on_attachment_point(
+                                decoder_state,
+                                attachment_point_pick,
+                                focus_atom_logprob=attachment_point_logprob,
+                                attachment_point_choice_info=attachment_point_choice_info,
+                            )
+                        )
             else:
                 assert not require_attachment_point_states
 
@@ -1471,8 +1470,8 @@ class MoLeRDecoder(tf.keras.layers.Layer):
                     new_decoder_states.append(
                         MoLeRDecoderState.new_with_focus_marked_as_visited(
                             decoder_state,
-                            molecule_generation_step_info=edge_choice_info,
                             focus_node_finished_logprob=0,
+                            edge_choice_info=edge_choice_info,
                         )
                     )
                     continue
@@ -1485,8 +1484,8 @@ class MoLeRDecoder(tf.keras.layers.Layer):
                         new_decoder_states.append(
                             MoLeRDecoderState.new_with_focus_marked_as_visited(
                                 decoder_state,
-                                molecule_generation_step_info=edge_choice_info,
                                 focus_node_finished_logprob=bond_pick_logprob,
+                                edge_choice_info=edge_choice_info,
                             )
                         )
                     else:
@@ -1500,8 +1499,8 @@ class MoLeRDecoder(tf.keras.layers.Layer):
                                     picked_bond_target
                                 ),  # Go from np.int32 to pyInt
                                 bond_type_idx=picked_bond_type,
-                                molecule_generation_step_info=edge_choice_info,
                                 bond_logprob=bond_pick_logprob,
+                                edge_choice_info=edge_choice_info,
                             )
                         )
 
