@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Improved how the MoLeR visualisers handle node selection steps and fixed the "visualise from latents" mode ([#10](https://github.com/microsoft/molecule-generation/pull/10))
+- Refactored how MoLeR keeps track of generation steps during decoding and included partial molecules in the step info classes ([#27](https://github.com/microsoft/molecule-generation/pull/27))
 
 ### Fixed
 - Constrained the version of `protobuf` to avoid pulling in a breaking release ([#25](https://github.com/microsoft/molecule-generation/pull/25))
