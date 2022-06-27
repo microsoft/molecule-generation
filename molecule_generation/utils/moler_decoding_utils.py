@@ -1,7 +1,8 @@
 """Decoding utilities for a MoLeR."""
 from collections import defaultdict
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, List, Optional, Tuple, NamedTuple, Iterable, DefaultDict
+from typing import Any, List, Optional, Tuple, NamedTuple, Iterable, DefaultDict, Union
 import heapq
 
 import numpy as np
@@ -89,27 +90,40 @@ class MoleculeGenerationEdgeCandidateInfo(NamedTuple):
     type_idx_to_logprobs: np.ndarray
 
 
-class MoleculeGenerationAtomChoiceInfo(NamedTuple):
+@dataclass
+class MoleculeGenerationAtomChoiceInfo:
     node_idx: int
     true_type_idx: Optional[List[int]]
     type_idx_to_prob: List[float]
+    molecule: Optional[Chem.Mol] = None
 
 
-class MoleculeGenerationEdgeChoiceInfo(NamedTuple):
+@dataclass
+class MoleculeGenerationEdgeChoiceInfo:
     focus_node_idx: int
     partial_molecule_adjacency_lists: List[np.ndarray]
     candidate_edge_infos: List[MoleculeGenerationEdgeCandidateInfo]
     no_edge_score: float
     no_edge_logprob: float
     no_edge_correct: Optional[bool]
+    molecule: Optional[Chem.Mol] = None
 
 
-class MoleculeGenerationAttachmentPointChoiceInfo(NamedTuple):
+@dataclass
+class MoleculeGenerationAttachmentPointChoiceInfo:
     partial_molecule_adjacency_lists: List[np.ndarray]
     motif_nodes: List[int]
     candidate_attachment_points: List[int]
     candidate_idx_to_prob: List[float]
     correct_attachment_point_idx: Optional[int]
+    molecule: Optional[Chem.Mol] = None
+
+
+MoleculeGenerationChoiceInfo = Union[
+    MoleculeGenerationAtomChoiceInfo,
+    MoleculeGenerationEdgeChoiceInfo,
+    MoleculeGenerationAttachmentPointChoiceInfo,
+]
 
 
 class MoLeRDecoderState(object):
@@ -135,11 +149,7 @@ class MoLeRDecoderState(object):
         atoms_to_mark_as_visited: Optional[List[int]] = None,
         focus_atom: Optional[int] = None,
         prior_focus_atom: Optional[int] = None,
-        edge_selection_steps: Optional[List[Optional[MoleculeGenerationEdgeChoiceInfo]]] = None,
-        atom_selection_steps: Optional[List[Optional[MoleculeGenerationAtomChoiceInfo]]] = None,
-        attachment_point_selection_steps: Optional[
-            List[Optional[MoleculeGenerationAttachmentPointChoiceInfo]]
-        ] = None,
+        generation_steps: Optional[List[MoleculeGenerationChoiceInfo]] = None,
         candidate_attachment_points: Optional[List[int]] = None,
         motifs: Optional[List[MotifAnnotation]] = None,
         num_free_bond_slots: Optional[List[Optional[int]]] = None,
@@ -179,6 +189,8 @@ class MoLeRDecoderState(object):
                 we generate new bonds.
             prior_focus_atom: The focus atom that we finished last. This is required
                 to inform the next-atom choice...
+            generation_steps: List of generation step metadata, or `None` if we don't want to store
+                the generation traces.
             candidate_attachment_points: Atoms in the molecule (stored as indices) that are
                 candidates to consider for picking an attachment point.
             motifs: List of annotations of motifs that already exist in the current molecule.
@@ -215,12 +227,24 @@ class MoLeRDecoderState(object):
         self._atoms_to_mark_as_visited: List[int] = atoms_to_mark_as_visited or []
         self._focus_atom: Optional[int] = focus_atom
         self._prior_focus_atom: Optional[int] = prior_focus_atom
-        self._edge_selection_steps = edge_selection_steps or []
-        self._atom_selection_steps = atom_selection_steps or []
-        self._attachment_point_selection_steps = attachment_point_selection_steps or []
+        self._generation_steps = generation_steps
         self._candidate_attachment_points = candidate_attachment_points or []
         self._motifs = motifs or []
         self._num_free_bond_slots = num_free_bond_slots or [None] * len(atom_types)
+
+    @staticmethod
+    def extend_generation_steps(
+        generation_steps: Optional[List[MoleculeGenerationChoiceInfo]],
+        choice_info: MoleculeGenerationChoiceInfo,
+        molecule: Chem.Mol,
+    ):
+        if choice_info is None:
+            return generation_steps
+        else:
+            assert generation_steps is not None
+            choice_info.molecule = Chem.Mol(molecule)
+
+            return list(generation_steps) + [choice_info]
 
     @staticmethod
     def new_with_added_atom(
@@ -246,15 +270,11 @@ class MoLeRDecoderState(object):
         new_atoms_to_visit.append(new_atom_idx)
         new_focus_atom = new_atoms_to_visit.pop(0)  # BFS exploration; .pop() would give DFS
 
-        new_atom_selection_steps = list(old_state._atom_selection_steps)
-        new_edge_selection_steps = list(old_state._edge_selection_steps)
-        new_attachment_point_selection_steps = list(old_state._attachment_point_selection_steps)
-
-        new_atom_selection_steps.append(atom_choice_info)
-
-        # Make sure that generation steps remain aligned:
-        new_edge_selection_steps.append(None)
-        new_attachment_point_selection_steps.append(None)
+        new_generation_steps = MoLeRDecoderState.extend_generation_steps(
+            generation_steps=old_state._generation_steps,
+            choice_info=atom_choice_info,
+            molecule=new_mol,
+        )
 
         return MoLeRDecoderState(
             molecule_representation=old_state._molecule_representation,
@@ -268,9 +288,7 @@ class MoLeRDecoderState(object):
             atoms_to_mark_as_visited=old_state._atoms_to_mark_as_visited,
             focus_atom=new_focus_atom,
             prior_focus_atom=old_state._focus_atom,
-            atom_selection_steps=new_atom_selection_steps,
-            edge_selection_steps=new_edge_selection_steps,
-            attachment_point_selection_steps=new_attachment_point_selection_steps,
+            generation_steps=new_generation_steps,
             candidate_attachment_points=old_state._candidate_attachment_points,
             motifs=old_state._motifs,
             num_free_bond_slots=old_state._num_free_bond_slots + [None],
@@ -287,14 +305,12 @@ class MoLeRDecoderState(object):
             raise ValueError(
                 "Decoding can only be finished when the decoder is not focused on creating bonds for an atom!"
             )
-        new_atom_selection_steps = list(old_state._atom_selection_steps)
-        new_edge_selection_steps = list(old_state._edge_selection_steps)
-        new_attachment_point_selection_steps = list(old_state._attachment_point_selection_steps)
 
-        new_atom_selection_steps.append(atom_choice_info)
-        # Make sure that generation steps remain aligned:
-        new_edge_selection_steps.append(None)
-        new_attachment_point_selection_steps.append(None)
+        new_generation_steps = MoLeRDecoderState.extend_generation_steps(
+            generation_steps=old_state._generation_steps,
+            choice_info=atom_choice_info,
+            molecule=old_state._molecule,
+        )
 
         return MoLeRDecoderState(
             molecule_representation=old_state._molecule_representation,
@@ -308,9 +324,7 @@ class MoLeRDecoderState(object):
             atoms_to_mark_as_visited=old_state._atoms_to_mark_as_visited,
             focus_atom=-1,
             prior_focus_atom=-1,
-            atom_selection_steps=new_atom_selection_steps,
-            edge_selection_steps=new_edge_selection_steps,
-            attachment_point_selection_steps=new_attachment_point_selection_steps,
+            generation_steps=new_generation_steps,
             candidate_attachment_points=old_state._candidate_attachment_points,
             motifs=old_state._motifs,
             num_free_bond_slots=old_state._num_free_bond_slots,
@@ -322,7 +336,7 @@ class MoLeRDecoderState(object):
         target_atom_idx: int,
         bond_type_idx: int,
         bond_logprob: float,
-        molecule_generation_step_info: Optional[MoleculeGenerationEdgeChoiceInfo] = None,
+        edge_choice_info: Optional[MoleculeGenerationEdgeChoiceInfo] = None,
     ) -> "MoLeRDecoderState":
         """Add a new bond to the partial mocule under construction."""
         if old_state._focus_atom is None:
@@ -339,15 +353,11 @@ class MoLeRDecoderState(object):
         new_adjacency_lists[bond_type_idx].append((old_state._focus_atom, target_atom_idx))
         new_adjacency_lists[bond_type_idx].append((target_atom_idx, old_state._focus_atom))
 
-        new_atom_selection_steps = list(old_state._atom_selection_steps)
-        new_edge_selection_steps = list(old_state._edge_selection_steps)
-        new_attachment_point_selection_steps = list(old_state._attachment_point_selection_steps)
-
-        new_edge_selection_steps.append(molecule_generation_step_info)
-
-        # Make sure that generation steps remain aligned:
-        new_atom_selection_steps.append(None)
-        new_attachment_point_selection_steps.append(None)
+        new_generation_steps = MoLeRDecoderState.extend_generation_steps(
+            generation_steps=old_state._generation_steps,
+            choice_info=edge_choice_info,
+            molecule=new_mol,
+        )
 
         if old_state._num_free_bond_slots[old_state._focus_atom] is not None:
             raise ValueError("Focus atom has a constraint on the number of new bonds.")
@@ -374,9 +384,7 @@ class MoLeRDecoderState(object):
             atoms_to_mark_as_visited=old_state._atoms_to_mark_as_visited,
             focus_atom=old_state._focus_atom,
             prior_focus_atom=old_state._prior_focus_atom,
-            atom_selection_steps=new_atom_selection_steps,
-            edge_selection_steps=new_edge_selection_steps,
-            attachment_point_selection_steps=new_attachment_point_selection_steps,
+            generation_steps=new_generation_steps,
             candidate_attachment_points=old_state._candidate_attachment_points,
             motifs=old_state._motifs,
             num_free_bond_slots=new_num_free_bond_slots,
@@ -454,15 +462,11 @@ class MoLeRDecoderState(object):
 
         attachment_points = [node_idx + node_idx_offset for node_idx in attachment_points]
 
-        new_atom_selection_steps = list(old_state._atom_selection_steps)
-        new_edge_selection_steps = list(old_state._edge_selection_steps)
-        new_attachment_point_selection_steps = list(old_state._attachment_point_selection_steps)
-
-        new_atom_selection_steps.append(atom_choice_info)
-
-        # Make sure that generation steps remain aligned:
-        new_edge_selection_steps.append(None)
-        new_attachment_point_selection_steps.append(None)
+        new_generation_steps = MoLeRDecoderState.extend_generation_steps(
+            generation_steps=old_state._generation_steps,
+            choice_info=atom_choice_info,
+            molecule=current_state._molecule,
+        )
 
         # Record the freshly added motif, so it can be marked in the partial graph node features.
         # Note that `symmetry_class_id` is not used here.
@@ -489,20 +493,25 @@ class MoLeRDecoderState(object):
             atoms_to_mark_as_visited=motif_nodes,
             focus_atom=None,
             prior_focus_atom=old_state._prior_focus_atom,
-            atom_selection_steps=new_atom_selection_steps,
-            edge_selection_steps=new_edge_selection_steps,
-            attachment_point_selection_steps=new_attachment_point_selection_steps,
+            generation_steps=new_generation_steps,
             candidate_attachment_points=attachment_points,
             motifs=new_motifs,
             num_free_bond_slots=old_state._num_free_bond_slots + [None] * motif_num_atoms,
         )
 
     @staticmethod
-    def new_with_changed_focus_atom(
+    def new_with_focus_on_attachment_point(
         old_state: "MoLeRDecoderState",
         new_focus_atom: int,
         focus_atom_logprob: float,
+        attachment_point_choice_info: MoleculeGenerationAttachmentPointChoiceInfo,
     ) -> "MoLeRDecoderState":
+        new_generation_steps = MoLeRDecoderState.extend_generation_steps(
+            generation_steps=old_state._generation_steps,
+            choice_info=attachment_point_choice_info,
+            molecule=old_state._molecule,
+        )
+
         return MoLeRDecoderState(
             molecule_representation=old_state._molecule_representation,
             molecule_id=old_state._molecule_id,
@@ -515,9 +524,7 @@ class MoLeRDecoderState(object):
             atoms_to_mark_as_visited=old_state._atoms_to_mark_as_visited,
             focus_atom=new_focus_atom,
             prior_focus_atom=old_state._focus_atom,
-            atom_selection_steps=old_state._atom_selection_steps,
-            edge_selection_steps=old_state._edge_selection_steps,
-            attachment_point_selection_steps=old_state._attachment_point_selection_steps,
+            generation_steps=new_generation_steps,
             candidate_attachment_points=old_state._candidate_attachment_points,
             motifs=old_state._motifs,
             num_free_bond_slots=old_state._num_free_bond_slots,
@@ -527,7 +534,7 @@ class MoLeRDecoderState(object):
     def new_with_focus_marked_as_visited(
         old_state: "MoLeRDecoderState",
         focus_node_finished_logprob: float,
-        molecule_generation_step_info: Optional[MoleculeGenerationEdgeChoiceInfo] = None,
+        edge_choice_info: Optional[MoleculeGenerationEdgeChoiceInfo] = None,
     ) -> "MoLeRDecoderState":
         """Mark a focus node as visited. If more nodes are available to visit, directly resets
         the focus node to one of them.
@@ -561,15 +568,11 @@ class MoLeRDecoderState(object):
             # The should be one motif node already added as visited: the attachment point.
             assert count_already_in_visited == 1
 
-        new_atom_selection_steps = list(old_state._atom_selection_steps)
-        new_edge_selection_steps = list(old_state._edge_selection_steps)
-        new_attachment_point_selection_steps = list(old_state._attachment_point_selection_steps)
-
-        new_edge_selection_steps.append(molecule_generation_step_info)
-
-        # Make sure that generation steps remain aligned:
-        new_atom_selection_steps.append(None)
-        new_attachment_point_selection_steps.append(None)
+        new_generation_steps = MoLeRDecoderState.extend_generation_steps(
+            generation_steps=old_state._generation_steps,
+            choice_info=edge_choice_info,
+            molecule=old_state._molecule,
+        )
 
         return MoLeRDecoderState(
             molecule_representation=old_state._molecule_representation,
@@ -580,12 +583,10 @@ class MoLeRDecoderState(object):
             adjacency_lists=old_state._adjacency_lists,
             visited_atoms=new_visited_atoms,
             atoms_to_visit=new_atoms_to_visit,
+            atoms_to_mark_as_visited=None,
             focus_atom=new_focus_atom,
             prior_focus_atom=old_state._focus_atom,
-            atom_selection_steps=new_atom_selection_steps,
-            atoms_to_mark_as_visited=None,
-            edge_selection_steps=new_edge_selection_steps,
-            attachment_point_selection_steps=new_attachment_point_selection_steps,
+            generation_steps=new_generation_steps,
             candidate_attachment_points=old_state._candidate_attachment_points,
             motifs=old_state._motifs,
             num_free_bond_slots=old_state._num_free_bond_slots,
@@ -628,16 +629,8 @@ class MoLeRDecoderState(object):
         return self._atoms_to_mark_as_visited
 
     @property
-    def atom_selection_steps(self):
-        return self._atom_selection_steps
-
-    @property
-    def edge_selection_steps(self):
-        return self._edge_selection_steps
-
-    @property
-    def attachment_point_selection_steps(self):
-        return self._attachment_point_selection_steps
+    def generation_steps(self):
+        return self._generation_steps
 
     @property
     def candidate_attachment_points(self):

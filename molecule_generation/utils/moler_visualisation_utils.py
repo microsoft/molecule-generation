@@ -301,38 +301,25 @@ class GraphGenerationVisualiser(ABC):
         mol = decoder_states.molecule
         self.render_molecule_gen_start(mol)
 
-        num_atom_selection_steps = len(decoder_states.atom_selection_steps)
-
-        assert len(decoder_states.edge_selection_steps) == num_atom_selection_steps
-        assert len(decoder_states.attachment_point_selection_steps) == num_atom_selection_steps
-
         step = 1
         first_step_done = False
 
-        for atom, edge, attachment_point in zip(
-            decoder_states.atom_selection_steps,
-            decoder_states.edge_selection_steps,
-            decoder_states.attachment_point_selection_steps,
-        ):
-            if attachment_point is not None:
-                self.render_attachment_point_selection_step(step, attachment_point)
+        for step_info in decoder_states.generation_steps:
+            if isinstance(step_info, MoleculeGenerationAttachmentPointChoiceInfo):
+                self.render_attachment_point_selection_step(step, step_info)
                 step += 1
-            elif edge is not None:
-                self.render_molecule_gen_edge_step(
-                    step,
-                    edge,
-                )
+            elif isinstance(step_info, MoleculeGenerationEdgeChoiceInfo):
+                self.render_molecule_gen_edge_step(step, step_info)
                 step += 1
-
-            if atom is not None:
+            elif isinstance(step_info, MoleculeGenerationAtomChoiceInfo):
                 # `atom.type_idx_to_prob` already comes without the `UNK` atom type, but we try to
                 # strip it later downstream. We hack things here and add a zero logit for `UNK` (the
                 # exact value doesn't matter as it gets removed anyway).
                 self.render_atom_data(
                     MoleculeGenerationAtomChoiceInfo(
-                        node_idx=atom.node_idx,
-                        true_type_idx=atom.true_type_idx,
-                        type_idx_to_prob=np.concatenate(([0.0], atom.type_idx_to_prob)),
+                        node_idx=step_info.node_idx,
+                        true_type_idx=step_info.true_type_idx,
+                        type_idx_to_prob=np.concatenate(([0.0], step_info.type_idx_to_prob)),
                     ),
                     choice_descr=(
                         "next addition to partial molecule"
@@ -340,5 +327,7 @@ class GraphGenerationVisualiser(ABC):
                         else "initial starting point"
                     ),
                 )
+            else:
+                raise ValueError(f"Unrecognized generation step info class: {step_info.__class__}")
 
             first_step_done = True
