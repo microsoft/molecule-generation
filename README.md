@@ -123,9 +123,10 @@ By default, training proceeds until there is no improvement in validation loss f
 
 ### Inference
 
-After a model has been trained and saved under `MODEL_DIR`, we provide a simple API to load it.
+After a model has been trained and saved under `MODEL_DIR`, we provide two ways to load it: from CLI or directly from Python.
+Currently, CLI-based loading does not expose all useful functionalities, and is mostly meant for simple tests.
 
-To sample molecules from the model, simply run
+To sample molecules from the model using the CLI, simply run
 
 ```
 molecule_generation sample MODEL_DIR NUM_SAMPLES
@@ -137,9 +138,10 @@ and, similarly, to encode a list of SMILES stored under `SMILES_PATH` into laten
 molecule_generation encode MODEL_DIR SMILES_PATH OUTPUT_PATH
 ```
 
-In all cases `MODEL_DIR` denotes the directory containing the model checkpoint, not the path to the checkpoint itself. The model loader will expect that `MODEL_DIR` contains _exactly_ one MoLeR checkpoint, which is recognized automatically using the filename.
+In all cases `MODEL_DIR` denotes the directory containing the model checkpoint, not the path to the checkpoint itself.
+The model loader will only look at `*.pkl` files under `MODEL_DIR`, and expect there is _exactly one_ such file, corresponding to the trained checkpoint.
 
-You can also load a trained MoLeR model directly from Python via
+You can load a model directly from Python via
 
 ```python
 from molecule_generation import load_model_from_directory
@@ -150,8 +152,25 @@ example_smiles = ["c1ccccc1", "CNC=O"]
 with load_model_from_directory(model_dir) as model:
     embeddings = model.encode(example_smiles)
     print(f"Embedding shape: {embeddings[0].shape}")
-    decoded_smiles = model.decode(embeddings)
-    print(f"Encoded: {example_smiles}, decoded: {decoded_smiles}")
+
+    # Decode without a scaffold constraint.
+    decoded = model.decode(embeddings)
+
+    # The i-th scaffold will be used when decoding the i-th latent vector.
+    decoded_scaffolds = model.decode(embeddings, scaffolds=["CN", "CCC"])
+
+    print(f"Encoded: {example_smiles}")
+    print(f"Decoded: {decoded}")
+    print(f"Decoded with scaffolds: {decoded_scaffolds}")
+```
+
+which should yield an output similar to
+
+```
+Embedding shape: (512,)
+Encoded: ['c1ccccc1', 'CNC=O']
+Decoded: ['C1=CC=CC=C1', 'CNC=O']
+Decoded with scaffolds: ['C1=CC=C(CNC2=CC=CC=C2)C=C1', 'CNC(=O)C(C)C']
 ```
 
 As shown above, MoLeR is loaded through a context manager.
