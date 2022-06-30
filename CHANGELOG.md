@@ -12,10 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An option for `encode` to return not only the mean latent code but also the variance ([#26](https://github.com/microsoft/molecule-generation/pull/26))
 
 ### Changed
-- Improved how the MoLeR visualisers handle node selection steps and fixed the "visualise from latents" mode ([#10](https://github.com/microsoft/molecule-generation/pull/10))
+- Improved how the MoLeR visualisers handle node selection steps ([#10](https://github.com/microsoft/molecule-generation/pull/10))
 - Refactored how MoLeR keeps track of generation steps during decoding and included partial molecules in the step info classes ([#27](https://github.com/microsoft/molecule-generation/pull/27))
 
 ### Fixed
+- One-off errors in the latent-based visualisation mode ([#10](https://github.com/microsoft/molecule-generation/pull/10))
 - Constrained the version of `protobuf` to avoid pulling in a breaking release ([#25](https://github.com/microsoft/molecule-generation/pull/25))
 
 ## [0.1.0] - 2022-04-11
