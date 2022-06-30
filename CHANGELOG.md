@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2022-07-01
+
 ### Added
 - `MoLeRGenerator`, which uses the MoLeR decoder (without the encoder) as an autoregressive policy ([#6](https://github.com/microsoft/molecule-generation/pull/6))
 - `load_model_from_directory`, which can load any model by automatically picking the right wrapper class (either `VaeWrapper` or `GeneratorWrapper`) ([#24](https://github.com/microsoft/molecule-generation/pull/24))
@@ -27,5 +29,6 @@ This is the first public release, matching what was used for [the original paper
 - Full implementation of MoLeR as introduced in the paper
 - Reference implementation of CGVAE, not yet supported by the high-level model API
 
-[Unreleased]: https://github.com/microsoft/molecule-generation/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/microsoft/molecule-generation/compare/v0.2.0...HEAD
 [0.1.0]: https://github.com/microsoft/molecule-generation/releases/tag/v0.1.0
+[0.2.0]: https://github.com/microsoft/molecule-generation/releases/tag/v0.2.0
