@@ -121,6 +121,8 @@ Property results: sa_score: MAE 11.23, MSE 1416.26 (norm MAE: 13.89) | clogp: MA
 
 By default, training proceeds until there is no improvement in validation loss for 3 consecutive mini-epochs, where a mini-epoch is defined as 5000 training steps; this can be controlled through the `--patience` flag and the `num_train_steps_between_valid` model parameter, respectively.
 
+Training can be resumed using the `--load-saved-model` flag. However, this is only applicable to resuming training on a fixed dataset; finetuning on a different dataset than used for pretraining is currently an experimental feature (see [Issue #21](https://github.com/microsoft/molecule-generation/issues/21) for details).
+
 ### Inference
 
 After a model has been trained and saved under `MODEL_DIR`, we provide two ways to load it: from CLI or directly from Python.
