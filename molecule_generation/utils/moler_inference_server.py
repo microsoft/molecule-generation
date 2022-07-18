@@ -3,20 +3,20 @@ import os
 import pathlib
 from collections import defaultdict
 from itertools import chain
-from multiprocessing import Queue, Process
+from multiprocessing import Process, Queue
 from queue import Empty
-from typing import List, Tuple, Optional, Iterator, Union, Any, DefaultDict
+from typing import DefaultDict, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
-from rdkit import Chem
 from more_itertools import chunked, ichunked
+from rdkit import Chem
 
-from molecule_generation.dataset.in_memory_trace_dataset import InMemoryTraceDataset, DataFold
+from molecule_generation.dataset.in_memory_trace_dataset import DataFold, InMemoryTraceDataset
 from molecule_generation.models.moler_generator import MoLeRGenerator
 from molecule_generation.models.moler_vae import MoLeRVae
-from molecule_generation.utils.moler_decoding_utils import DecoderSamplingMode, MoLeRDecoderState
-from molecule_generation.utils.model_utils import load_vae_model_and_dataset
 from molecule_generation.preprocessing.data_conversion_utils import remove_non_max_frags
+from molecule_generation.utils.model_utils import load_vae_model_and_dataset
+from molecule_generation.utils.moler_decoding_utils import DecoderSamplingMode, MoLeRDecoderState
 
 Pathlike = Union[str, pathlib.Path]
 
