@@ -9,22 +9,22 @@ This repository contains training and inference code for the MoLeR model introdu
 
 ## Quick start
 
-The `molecule_generation` package depends on `rdkit`, which has to be installed separately. One simple approach is to do it via `conda`
+The `molecule_generation` package can be installed via `pip`, but it additionally depends on `rdkit` and (if one wants to use a GPU) on correctly setting up CUDA libraries. One approach to get both is through our minimalistic `conda` environment:
 
 ```bash
-conda create --name moler-env python=3.7
+conda env create -f environment.yml
 conda activate moler-env
-conda install rdkit==2020.09.1.0 -c conda-forge
 ```
 
-Then, to install the latest release of `molecule_generation`, simply run
+This environment pins the versions of `python`, `rdkit` and `tensorflow` for reproducibility, but `molecule_generation` is compatible with a range of versions of these dependencies.
+
+To then install the latest release of `molecule_generation`, simply run
 ```bash
 pip install molecule-generation
 ```
 
 Alternatively, running `pip install -e .` within the root folder installs the latest state of the code, including changes that were merged into `main` but not yet released.
 
-Note that in the instructions above we pinned the `rdkit` version, as this is the version the code has been tested with. However, our code is likely to work with other modern version of `rdkit` as well.
 
 A MoLeR checkpoint trained using the default hyperparameters is available [here](https://figshare.com/ndownloader/files/34642724). This file needs to be saved in a fresh folder `MODEL_DIR` (e.g., `/tmp/MoLeR_checkpoint`) and be renamed to have the `.pkl` ending (e.g., to `GNN_Edge_MLP_MoLeR__2022-02-24_07-16-23_best.pkl`). Then you can sample 10 molecules by running
 
