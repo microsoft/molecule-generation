@@ -9,15 +9,16 @@ This repository contains training and inference code for the MoLeR model introdu
 
 ## Quick start
 
-The `molecule_generation` package depends on `rdkit`, which has to be installed separately. One simple approach is to do it via `conda`
+The `molecule_generation` package can be installed via `pip`, but it additionally depends on `rdkit` and (if one wants to use a GPU) on correctly setting up CUDA libraries. One approach to get both is through our minimalistic `conda` environment:
 
 ```bash
-conda create --name moler-env python=3.7
+conda env create -f environment.yml
 conda activate moler-env
-conda install rdkit==2020.09.1.0 -c conda-forge
 ```
 
-Then, to install the latest release of `molecule_generation`, simply run
+This environment pins the versions of `python`, `rdkit` and `tensorflow` for reproducibility, but `molecule_generation` is compatible with a range of versions of these dependencies.
+
+To then install the latest release of `molecule_generation`, simply run
 ```bash
 pip install molecule-generation
 ```
