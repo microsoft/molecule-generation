@@ -40,7 +40,7 @@ class GraphPropertyPredictor(tf.keras.layers.Layer):
         property_stddev: Optional[float],
         **kwargs,
     ):
-        super().__init__(params, **kwargs)
+        super().__init__(**kwargs)
         self._params = params
         self._property_type = PropertyTaskType[property_type.upper()]
 
