@@ -36,10 +36,11 @@ See the next sections for how to train your own model and run more advanced infe
 
 ## Workflow
 
-Working with MoLeR can be roughly divided into three stages:
+Working with MoLeR can be roughly divided into four stages:
 - *data preprocessing*, where a plain text list of SMILES strings is turned into `*.pkl` files containing descriptions of the molecular graphs and generation traces;
-- *training*, where MoLeR is trained on the preprocessed data until convergence; and
-- *inference*, where one loads the model and performs batched encoding, decoding or sampling.
+- *training*, where MoLeR is trained on the preprocessed data until convergence;
+- *inference*, where one loads the model and performs batched encoding, decoding or sampling; and (optionally)
+- *fine-tuning*, where a previously trained model is fine-tuned on new data.
 
 Additionally, you can visualise the decoding traces and internal action probabilities of the model, which can be useful for debugging.
 
@@ -121,8 +122,6 @@ Property results: sa_score: MAE 11.23, MSE 1416.26 (norm MAE: 13.89) | clogp: MA
 
 By default, training proceeds until there is no improvement in validation loss for 3 consecutive mini-epochs, where a mini-epoch is defined as 5000 training steps; this can be controlled through the `--patience` flag and the `num_train_steps_between_valid` model parameter, respectively.
 
-Training can be resumed using the `--load-saved-model` flag. However, this is only applicable to resuming training on a fixed dataset; finetuning on a different dataset than used for pretraining is currently an experimental feature (see [Issue #21](https://github.com/microsoft/molecule-generation/issues/21) for details).
-
 ### Inference
 
 After a model has been trained and saved under `MODEL_DIR`, we provide two ways to load it: from CLI or directly from Python.
@@ -180,6 +179,30 @@ Behind the scenes, the following things happen:
 - First, an appropriate wrapper class is chosen: if the provided directory contains a `MoLeRVae` checkpoint, the returned wrapper will support `encode`, `decode` and `sample`, while `MoLeRGenerator` will only support `sample`.
 - Next, parallel workers are spawned, which await queries for encoding/decoding; these processes continue to live as long as the context is active.
 The degree of paralellism can be configured using a `num_workers` argument.
+
+### Fine-tuning
+
+Fine-tuning proceeds similarly to training from scratch, with a few adjustments.
+First, data intended for fine-tuning has to be preprocessed accordingly, by running
+
+```
+molecule_generation preprocess INPUT_DIR OUTPUT_DIR TRACE_DIR \
+    --pretrained-model-path CHECKPOINT_PATH
+```
+
+Where `CHECKPOINT_PATH` points to the file (not directory) corresponding to the model that will later be fine-tuned.
+
+The `--pretrained-model-path` argument is necessary, as otherwise preprocessing would infer various metadata (e.g. set of atom/motif types) solely from the provided set of SMILES, whereas for fine-tuning this has to be aligned with the metadata that the model was originally trained with.
+
+After preprocessing, fine-tuning is run as
+```
+molecule_generation train MoLeR TRACE_DIR \
+    --load-saved-model CHECKPOINT_PATH \
+    --load-weights-only
+```
+
+When fine-tuning on a small dataset, it may not be desirable to update the model until convergence.
+Training duration can be capped by passing `--model-params-override '{"num_train_steps_between_valid": 100}'` (to shorten the mini-epochs) and `--max-epochs` (to limit the number of mini-epochs).
 
 ### Visualisation
 
