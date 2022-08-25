@@ -4,11 +4,11 @@ import enum
 import logging
 import os
 import pathlib
+import pickle
 from typing import Dict, List, Optional, Tuple, TypeVar, Union
 
 from dpu_utils.utils import RichPath
 
-import molecule_generation.chem.atom_feature_utils as atom_utils
 import molecule_generation.chem.motif_utils as motif_utils
 import molecule_generation.preprocessing.generation_order as gen_order
 from molecule_generation.preprocessing.preprocess import preprocess_jsonl_files
@@ -129,6 +129,12 @@ def get_argparser() -> argparse.ArgumentParser:
         help="Use only the specified number of datapoints.",
     )
     parser.add_argument(
+        "--pretrained-model-path",
+        dest="pretrained_model_path",
+        type=str,
+        help="Make the data compatible with finetuning (overrides various other arguments).",
+    )
+    parser.add_argument(
         "--motif-min-frequency",
         dest="motif_min_frequency",
         type=int,
@@ -206,6 +212,7 @@ def run_smiles_preprocessing(
     output_dir: Pathlike,
     generation_order: str,
     motif_extraction_settings: Optional[motif_utils.MotifExtractionSettings] = None,
+    pretrained_model_path: Optional[str] = None,
     num_datapoints: Optional[int] = None,
     num_processes: int = 1,
     quiet: bool = False,
@@ -219,6 +226,8 @@ def run_smiles_preprocessing(
         output_dir: Output directory where the intermediate features are stored.
         generation_order: Generation order to use (see `GENERATION_ORDER_CLS`).
         motif_extraction_settings: Settings for motif extraction.
+        pretrained_model_path: If provided, data will be prepared for finetuning the given model,
+            in particular, atom featurisers and motif vocabulary will be copied over.
         num_datapoints: If specified, only this number of examples is used for training
             (validation and test folds are appropriately rescaled).
         num_processes: Number of worker processes to use.
@@ -229,11 +238,45 @@ def run_smiles_preprocessing(
     output_dir = str(output_dir)
     trace_dir = str(trace_dir)
 
+    generation_order_cls = GENERATION_ORDER_CLS[generation_order]
+
+    if pretrained_model_path is not None:
+        logger.info("Data will be made compatible with finetuning the provided model.")
+
+        with open(pretrained_model_path, "rb") as f:
+            original_dataset_metadata = pickle.load(f)["dataset_metadata"]
+
+        original_generation_order_cls = original_dataset_metadata["generation_order"]
+        if original_generation_order_cls != generation_order_cls:
+            logger.warning(
+                f"The generation order {generation_order_cls.__name__} chosen will be overriden by "
+                f"{original_generation_order_cls.__name__} coming from the pretrained model."
+            )
+
+        original_motif_extraction_settings = original_dataset_metadata["motif_vocabulary"].settings
+        if original_motif_extraction_settings != motif_extraction_settings:
+            logger.warning(
+                f"The motif extraction settings {motif_extraction_settings} chosen will have no "
+                f"effect; vocabulary coming from the pretrained model will loaded instead, which "
+                f"used different settings ({original_motif_extraction_settings})."
+            )
+
+        generation_order_cls = original_generation_order_cls
+        motif_extraction_settings = None
+    else:
+        original_dataset_metadata = None
+
     # Check if featurised data already exists.
     done_featurising = _featurised_data_exists(output_dir)
 
     if done_featurising:
         logger.info("Using featurised data from previous run.")
+
+        if original_dataset_metadata is not None:
+            logger.warning(
+                "Some parts of the original dataset metadata will not be reused "
+                "(make sure the previous run was also finetuning-compatible)."
+            )
     else:
         train_datapoints, valid_datapoints, test_datapoints = load_smiles_data(
             input_dir, n_datapoints=num_datapoints
@@ -246,15 +289,23 @@ def run_smiles_preprocessing(
             ", beginning featurization."
         )
 
+        if original_dataset_metadata is not None:
+            featurisation_kwargs = {
+                "atom_feature_extractors": original_dataset_metadata["feature_extractors"],
+                "motif_vocabulary": original_dataset_metadata["motif_vocabulary"],
+            }
+        else:
+            featurisation_kwargs = {}
+
         logger.info(f"Featurising data...")
         featurised_data = featurise_smiles_datapoints(
             train_data=train_datapoints,
             valid_data=valid_datapoints,
             test_data=test_datapoints,
-            atom_feature_extractors=atom_utils.get_default_atom_featurisers(),
-            num_processes=num_processes,
             motif_extraction_settings=motif_extraction_settings,
+            num_processes=num_processes,
             quiet=quiet,
+            **featurisation_kwargs,
         )
         logger.info(f"Completed initializing feature extractors; featurising and saving data now.")
 
@@ -263,9 +314,6 @@ def run_smiles_preprocessing(
             output_dir=output_dir,
             quiet=quiet,
         )
-
-    # TODO(kmaziarz): Maybe this should be done at an earlier point.
-    generation_order_cls = GENERATION_ORDER_CLS[generation_order]
 
     # Now, convert data to traces.
     jsonl_directory = RichPath.create(output_dir)
@@ -305,6 +353,7 @@ def run_from_args(args: argparse.Namespace) -> None:
         trace_dir=args.TRACE_DIR,
         generation_order=args.generation_order,
         motif_extraction_settings=_args_to_motif_settings(args),
+        pretrained_model_path=args.pretrained_model_path,
         num_datapoints=args.num_datapoints,
         num_processes=args.num_processes,
         quiet=args.quiet,

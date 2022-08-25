@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Support for fine-tuning a pretrained model on new data ([#30](https://github.com/microsoft/molecule-generation/pull/30))
+
 ## [0.2.0] - 2022-07-01
 
 ### Added
