@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Support for fine-tuning a pretrained model on new data ([#30](https://github.com/microsoft/molecule-generation/pull/30))
 
+### Fixed
+- Made the inference server exit gracefully in case of errors instead of hanging ([#33](https://github.com/microsoft/molecule-generation/pull/33))
+
 ## [0.2.0] - 2022-07-01
 
 ### Added
