@@ -1,22 +1,23 @@
 import enum
 import os
 import pathlib
+import queue
 from collections import defaultdict
 from itertools import chain
-from multiprocessing import Queue, Process
+from multiprocessing import Process, Queue
 from queue import Empty
-from typing import List, Tuple, Optional, Iterator, Union, Any, DefaultDict
+from typing import Any, DefaultDict, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
-from rdkit import Chem
 from more_itertools import chunked, ichunked
+from rdkit import Chem
 
-from molecule_generation.dataset.in_memory_trace_dataset import InMemoryTraceDataset, DataFold
+from molecule_generation.dataset.in_memory_trace_dataset import DataFold, InMemoryTraceDataset
 from molecule_generation.models.moler_generator import MoLeRGenerator
 from molecule_generation.models.moler_vae import MoLeRVae
-from molecule_generation.utils.moler_decoding_utils import DecoderSamplingMode, MoLeRDecoderState
-from molecule_generation.utils.model_utils import load_vae_model_and_dataset
 from molecule_generation.preprocessing.data_conversion_utils import remove_non_max_frags
+from molecule_generation.utils.model_utils import load_vae_model_and_dataset
+from molecule_generation.utils.moler_decoding_utils import DecoderSamplingMode, MoLeRDecoderState
 
 Pathlike = Union[str, pathlib.Path]
 
@@ -234,6 +235,26 @@ class MoLeRInferenceServer(object):
         self._request_queue.close()
         self._output_queue.close()
 
+    def try_collect_results(self, num_results: int) -> List[Any]:
+        results: List[Any] = [None] * num_results
+
+        # Try to collect the results and put them back in order.
+        for _ in range(num_results):
+            while True:
+                try:
+                    result_id, result = self._output_queue.get(timeout=10)
+                    results[result_id] = result
+                    break
+                except queue.Empty:
+                    # We could not get the next result before the timeout, let us make sure that all
+                    # child processes are still alive.
+                    for worker in self._processes:
+                        if not worker.is_alive():
+                            self.cleanup_workers(ignore_failures=True)
+                            raise RuntimeError("Worker process died")
+
+        return list(chain(*results))
+
     def __del__(self):
         self.cleanup_workers()
 
@@ -248,22 +269,18 @@ class MoLeRInferenceServer(object):
     def encode(self, smiles_list: List[str], include_log_variances: bool = False):
         self.init_workers()
 
-        # Issue all requests to the workers, and prepare results array to hold them:
-        # Choose chunk size such that all workers have something to do:
+        # Choose chunk size such that all workers have something to do.
         chunk_size = min(self._max_num_samples_per_chunk, len(smiles_list) // self._num_workers + 1)
-        results: List[Any] = []
+
+        # Issue all requests to the workers.
+        num_results = 0
         for smiles_chunk in chunked(smiles_list, chunk_size):
             self._request_queue.put(
-                (MoLeRRequestType.ENCODE, len(results), (smiles_chunk, include_log_variances))
+                (MoLeRRequestType.ENCODE, num_results, (smiles_chunk, include_log_variances))
             )
-            results.append(None)
+            num_results += 1
 
-        # Collect results and put them back into order, before returning them as one long list:
-        for _ in range(len(results)):
-            result_id, result = self._output_queue.get()
-            results[result_id] = result
-
-        return list(chain(*results))
+        return self.try_collect_results(num_results)
 
     def decode(
         self,
@@ -274,12 +291,12 @@ class MoLeRInferenceServer(object):
         sampling_mode: DecoderSamplingMode = DecoderSamplingMode.GREEDY,
     ) -> List[Tuple[str, Optional[np.ndarray]]]:
         self.init_workers()
-        # Issue all requests to the workers, and prepare results array to hold them:
-        # Choose chunk size such that all workers have something to do:
+
+        # Choose chunk size such that all workers have something to do.
         chunk_size = min(
             self._max_num_samples_per_chunk, len(latent_representations) // self._num_workers + 1
         )
-        results: List[Any] = []
+
         if init_mols and len(init_mols) != len(latent_representations):
             raise ValueError(
                 f"Number of graph representations ({len(latent_representations)})"
@@ -289,12 +306,14 @@ class MoLeRInferenceServer(object):
         if not init_mols:
             init_mols = [None for _ in range(len(latent_representations))]
 
+        # Issue all requests to the workers.
+        num_results = 0
         init_mol_chunks = ichunked(init_mols, chunk_size)
         for latents_chunk in chunked(latent_representations, chunk_size):
             self._request_queue.put(
                 (
                     MoLeRRequestType.DECODE,
-                    len(results),
+                    num_results,
                     (
                         latents_chunk,
                         include_latent_samples,
@@ -304,11 +323,6 @@ class MoLeRInferenceServer(object):
                     ),
                 )
             )
-            results.append(None)
+            num_results += 1
 
-        # Collect results and put them back into order, before returning them as one long list:
-        for _ in range(len(results)):
-            result_id, result = self._output_queue.get()
-            results[result_id] = result
-
-        return list(chain(*results))
+        return self.try_collect_results(num_results)
