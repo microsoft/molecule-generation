@@ -12,7 +12,7 @@ This repository contains training and inference code for the MoLeR model introdu
 The `molecule_generation` package depends on `rdkit`, which has to be installed separately. One simple approach is to do it via `conda`
 
 ```bash
-conda create --name moler-env python=3.7
+conda create --name moler-env python=3.8
 conda activate moler-env
 conda install rdkit==2020.09.1.0 -c conda-forge
 ```

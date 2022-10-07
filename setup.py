@@ -16,14 +16,14 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/microsoft/molecule-generation/",
     setup_requires=["setuptools_scm"],
-    python_requires="==3.7.*",
+    python_requires="==3.8.*",
     install_requires=[
         "dpu-utils>=0.2.13",
         "more-itertools",
-        "numpy==1.19.2",  # Pinned due to incompatibility with `tensorflow`.
+        "numpy>=1.19.2",  # Pinned due to incompatibility with `tensorflow`.
         "protobuf<4",  # Avoid the breaking 4.21.0 release.
         "scikit-learn>=0.24.1",
-        "tensorflow==2.1.0",  # Pinned due to issues with `h5py`.
+        "tensorflow>=2.1.0",  # Pinned due to issues with `h5py`.
         "tf2_gnn>=2.13.0",
     ],
     packages=setuptools.find_packages(),
