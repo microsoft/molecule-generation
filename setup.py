@@ -16,7 +16,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/microsoft/molecule-generation/",
     setup_requires=["setuptools_scm"],
-    python_requires="==3.8.*",
+    python_requires=">=3.7.*,<3.9",
     install_requires=[
         "dpu-utils>=0.2.13",
         "more-itertools",
