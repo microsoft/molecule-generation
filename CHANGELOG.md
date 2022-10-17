@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Support for fine-tuning a pretrained model on new data ([#30](https://github.com/microsoft/molecule-generation/pull/30))
+- `__version__` attribute to make the package version easily accessible at runtime ([#35](https://github.com/microsoft/molecule-generation/pull/35))
+
+### Changed
+- Dropped the exact version requirements for `python` and `tensorflow` in order to support entire ranges of versions, including modern ones ([#35](https://github.com/microsoft/molecule-generation/pull/35))
 
 ### Removed
 - Unused `GraphMultitaskModel` which ended up in the open-source release by accident ([#34](https://github.com/microsoft/molecule-generation/pull/34))
