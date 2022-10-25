@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2022-10-18
+
 ### Added
 - Support for fine-tuning a pretrained model on new data ([#30](https://github.com/microsoft/molecule-generation/pull/30))
 - `__version__` attribute to make the package version easily accessible at runtime ([#35](https://github.com/microsoft/molecule-generation/pull/35))
@@ -42,6 +44,7 @@ This is the first public release, matching what was used for [the original paper
 - Full implementation of MoLeR as introduced in the paper
 - Reference implementation of CGVAE, not yet supported by the high-level model API
 
-[Unreleased]: https://github.com/microsoft/molecule-generation/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/microsoft/molecule-generation/compare/v0.3.0...HEAD
 [0.1.0]: https://github.com/microsoft/molecule-generation/releases/tag/v0.1.0
 [0.2.0]: https://github.com/microsoft/molecule-generation/releases/tag/v0.2.0
+[0.3.0]: https://github.com/microsoft/molecule-generation/releases/tag/v0.3.0
