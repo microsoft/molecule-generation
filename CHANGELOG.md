@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Reformatted the code with the newest `black` (version `23.1.0`) and pinned it in CI to avoid further unexpected updates ([#50](https://github.com/microsoft/molecule-generation/pull/50))
 
+### Fixed
+- Removed deprecated `numpy` types to make `molecule_generation` work with `numpy>=1.24.0` ([#49](https://github.com/microsoft/molecule-generation/pull/49))
+
 ## [0.3.0] - 2022-10-18
 
 ### Added
