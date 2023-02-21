@@ -64,7 +64,7 @@ def test_constrain_edge_choices_based_on_valence_with_empty_edge_choices():
 
     # Then:
     expected_edge_choices = np.zeros(shape=(0, 2), dtype=np.int32)
-    expected_open_edges = np.zeros(shape=(0,), dtype=np.bool)
+    expected_open_edges = np.zeros(shape=(0,), dtype=bool)
     np.testing.assert_array_equal(edge_choices, expected_edge_choices)
     np.testing.assert_array_equal(target_candidate_mask, expected_open_edges)
 
