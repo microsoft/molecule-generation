@@ -31,7 +31,6 @@ class MoLeRGenerator(MoLeRBaseModel):
         ],  # Ignored: here for consistency of interface with moler_vae
         training: bool,
     ) -> MoLeRGeneratorOutput:
-
         molecule_representations = tf.zeros(
             (batch_features["num_partial_graphs_in_batch"], self.latent_dim)
         )
@@ -83,7 +82,6 @@ class MoLeRGenerator(MoLeRBaseModel):
         self.built = True
 
     def compute_epoch_metrics(self, task_results: List[Any]) -> Tuple[float, str]:
-
         average_loss = self._dict_average(task_results, "loss")
         result_string = f"\n" f"Avg weighted sum. of graph losses: {average_loss: 7.4f}\n"
 

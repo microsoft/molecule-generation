@@ -154,7 +154,6 @@ class MoLeRVae(MoLeRBaseModel):
                 raise ValueError(f"Unknown property type {prop_type}")
 
     def build(self, input_shapes: Dict[str, Any]):
-
         # Build decoder
         super().build(input_shapes=input_shapes)
 
@@ -413,7 +412,6 @@ class MoLeRVae(MoLeRBaseModel):
         task_output: MoLeRVaeOutput,
         batch_labels: Dict[str, tf.Tensor],
     ) -> MoLeRMetrics:
-
         total_loss, decoder_metrics = self._compute_decoder_loss_and_metrics(
             batch_features=batch_features, task_output=task_output, batch_labels=batch_labels
         )
@@ -475,7 +473,6 @@ class MoLeRVae(MoLeRBaseModel):
         return graph_generation_losses
 
     def compute_epoch_metrics(self, task_results: List[Any]) -> Tuple[float, str]:
-
         # Compute results for the individual property predictors.
         # Weigh their respective contributions using the loss weight.
         prop_to_task_results: Dict[str, List[Dict[str, Any]]] = {

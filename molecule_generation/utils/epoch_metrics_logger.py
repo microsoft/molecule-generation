@@ -12,7 +12,6 @@ class EpochMetricsLogger:
     def __init__(
         self, *, window_size: int = 100, quiet: bool, aml_run: Optional, training: bool
     ) -> None:
-
         self._window_size = window_size
         self._quiet = quiet
         self._aml_run = aml_run

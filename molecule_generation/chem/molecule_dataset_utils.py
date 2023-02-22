@@ -661,7 +661,6 @@ def _smiles_to_rdkit_mol(
 
         # Compute molecule-based scores with RDKit:
         if include_molecule_stats:
-
             datapoint["properties"] = {
                 "sa_score": compute_sa_score(rdkit_mol),
                 "clogp": MolLogP(rdkit_mol),

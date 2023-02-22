@@ -62,7 +62,7 @@ def _encode_from_smiles(
         )
 
         # Get means and log variances, both with shape [NumGraphsInBatch, LatentDim].
-        (graph_rep_mean, graph_rep_logvar, _,) = model.compute_latent_molecule_representations(
+        (graph_rep_mean, graph_rep_logvar, _) = model.compute_latent_molecule_representations(
             final_node_representations=final_node_representations,
             num_graphs=batch_features["num_graphs_in_batch"],
             node_to_graph_map=batch_features["node_to_graph_map"],

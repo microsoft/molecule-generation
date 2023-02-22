@@ -279,7 +279,6 @@ class GraphGenerationVisualiser(ABC):
                 )
 
     def visualise_from_samples(self, molecule_representation: np.ndarray):
-
         property_data: Dict[str, PropertyPredictionInformation] = {}
 
         for prop_name in self.supported_property_names:

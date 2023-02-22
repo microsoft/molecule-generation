@@ -22,7 +22,6 @@ def batch_decoder_states(
     init_batch_callback: Callable[[Dict[str, Any]], None],
     add_state_to_batch_callback: Callable[[Dict[str, Any], MoLeRDecoderState], None],
 ) -> Generator[Tuple[Dict[str, Any], List[MoLeRDecoderState]], None, None]:
-
     graph_id_offset = 0
 
     def _get_empty_batch() -> Dict[str, Any]:

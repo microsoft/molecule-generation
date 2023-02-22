@@ -631,7 +631,6 @@ class CGVAE(GraphTaskModel):
         max_num_steps: Optional[int] = None,  # Run until dataset ends if None
         aml_run: Optional = None,
     ) -> Tuple[float, float, List[Any]]:
-
         with EpochMetricsLogger(
             window_size=self._logged_loss_smoothing_window_size,
             quiet=quiet,
