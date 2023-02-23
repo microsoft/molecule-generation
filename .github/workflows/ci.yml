@@ -39,7 +39,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install numpy==${{ matrix.numpy }}
         python -m pip install .
-        python -m pip install black flake8 pytest
+        python -m pip install black==23.1.0 flake8 pytest
     - name: Lint with black
       run: |
         black . --check --diff

@@ -301,7 +301,6 @@ class MoLeRDecoder(tf.keras.layers.Layer):
         )
 
     def compute_metrics(self, *, batch_features, batch_labels, task_output) -> MoLeRDecoderMetrics:
-
         node_classification_loss = self.compute_node_type_selection_loss(
             node_type_logits=task_output.node_type_logits,
             node_type_multihot_labels=batch_labels["correct_node_type_choices"],
@@ -1128,7 +1127,6 @@ class MoLeRDecoder(tf.keras.layers.Layer):
         beam_size: int = 1,
         sampling_mode: DecoderSamplingMode = DecoderSamplingMode.GREEDY,
     ) -> List[MoLeRDecoderState]:
-
         """Decoding procedure for MoLeR.
 
         This method can handle generation of many graphs in parallel and implements greedy
@@ -1430,7 +1428,7 @@ class MoLeRDecoder(tf.keras.layers.Layer):
                     attachment_pick_results,
                     attachment_pick_logits,
                 ):
-                    for (attachment_point_pick, attachment_point_logprob) in attachment_point_picks:
+                    for attachment_point_pick, attachment_point_logprob in attachment_point_picks:
                         attachment_point_choice_info = None
                         if store_generation_traces:
                             attachment_point_choice_info = MoleculeGenerationAttachmentPointChoiceInfo(
@@ -1460,7 +1458,7 @@ class MoLeRDecoder(tf.keras.layers.Layer):
                 store_generation_traces=store_generation_traces,
                 sampling_mode=sampling_mode,
             )
-            for (decoder_state, (bond_picks, edge_choice_info)) in zip(
+            for decoder_state, (bond_picks, edge_choice_info) in zip(
                 require_bond_states, bond_pick_results
             ):
                 if len(bond_picks) == 0:
@@ -1476,7 +1474,7 @@ class MoLeRDecoder(tf.keras.layers.Layer):
                     )
                     continue
 
-                for (bond_pick, bond_pick_logprob) in bond_picks:
+                for bond_pick, bond_pick_logprob in bond_picks:
                     # If the decoder says we need no more bonds for the current focus node,
                     # we mark this and put the decoder state back for the next expansion round:
                     if bond_pick is None:

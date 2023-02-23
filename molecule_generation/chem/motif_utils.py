@@ -230,7 +230,7 @@ def find_motifs_from_vocabulary(
 
     motifs_found = []
 
-    for (motif, atom_annotations) in fragments:
+    for motif, atom_annotations in fragments:
         smiles = Chem.MolToSmiles(motif)
 
         if smiles in motif_vocabulary.vocabulary:

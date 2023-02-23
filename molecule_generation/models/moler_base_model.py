@@ -175,7 +175,6 @@ class MoLeRBaseModel(GraphTaskModel):
     def _compute_decoder_loss_and_metrics(
         self, batch_features, task_output, batch_labels
     ) -> Tuple[tf.Tensor, MoLeRDecoderMetrics]:
-
         decoder_metrics = self.decoder.compute_metrics(
             batch_features=batch_features, batch_labels=batch_labels, task_output=task_output
         )
@@ -200,7 +199,6 @@ class MoLeRBaseModel(GraphTaskModel):
     def _get_decoder_output(
         self, *, batch_features, molecule_representations, training
     ) -> MoLeRDecoderOutput:
-
         partial_adjacency_lists: Tuple[tf.Tensor, ...] = tuple(
             batch_features[f"partial_adjacency_list_{edge_type_idx}"]
             for edge_type_idx in range(self._num_edge_types)
