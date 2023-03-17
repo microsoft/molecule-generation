@@ -51,7 +51,7 @@ def constrain_edge_choices_based_on_valence(
 
     # Early exit for degenerate case:
     if len(candidate_target_nodes) == 0:
-        return np.zeros(shape=(0,), dtype=np.bool)
+        return np.zeros(shape=(0,), dtype=bool)
 
     node_idx_to_valency_map = _calculate_valency_map(adjacency_lists, node_types)
     node_idx_to_max_valency_map = _calculate_max_valency(node_types)
@@ -150,7 +150,7 @@ def _calculate_valency_map(
         A numpy array of shape (num_nodes,). The ith element of the array corresponds to the valency
         of the node whose index is i.
     """
-    node_idx_to_valency_map = np.zeros(shape=len(node_types), dtype=np.int)
+    node_idx_to_valency_map = np.zeros(shape=len(node_types), dtype=np.int32)
     for edge_type_idx, adjacency_list in enumerate(adjacency_lists):
         if len(adjacency_list) == 0:
             continue

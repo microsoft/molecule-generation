@@ -16,7 +16,7 @@ conda env create -f environment.yml
 conda activate moler-env
 ```
 
-This environment pins the versions of `python`, `rdkit` and `tensorflow` for reproducibility, but `molecule_generation` is compatible with a range of versions of these dependencies.
+This environment pins the versions of `python`, `rdkit` and `tensorflow` for reproducibility, but `molecule_generation` is compatible with a range of versions of these dependencies. If `tensorflow` installation doesn't work out-of-the-box for your particular system, you may need to refer to [the tensorflow website](https://www.tensorflow.org/install) for guidelines.
 
 To then install the latest release of `molecule_generation`, simply run
 ```bash
@@ -24,9 +24,6 @@ pip install molecule-generation
 ```
 
 Alternatively, running `pip install -e .` within the root folder installs the latest state of the code, including changes that were merged into `main` but not yet released.
-
-Note that in the instructions above we pinned the `rdkit` version, as this is the version the code has been tested with. However, our code is likely to work with other modern version of `rdkit` as well.
-Finally, if `tensorflow` installation doesn't work out-of-the-box for your particular system, you may need to refer to [the tensorflow website](https://www.tensorflow.org/install) for guidelines.
 
 A MoLeR checkpoint trained using the default hyperparameters is available [here](https://figshare.com/ndownloader/files/34642724) (or [here](https://pan.baidu.com/s/1lkiWK9-d5MvNyzqRrusGXA?pwd=4hij) if you're in China and figshare doesn't work for you). This file needs to be saved in a fresh folder `MODEL_DIR` (e.g., `/tmp/MoLeR_checkpoint`) and be renamed to have the `.pkl` ending (e.g., to `GNN_Edge_MLP_MoLeR__2022-02-24_07-16-23_best.pkl`). Then you can sample 10 molecules by running
 
