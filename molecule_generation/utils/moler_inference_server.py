@@ -17,7 +17,11 @@ from molecule_generation.models.moler_generator import MoLeRGenerator
 from molecule_generation.models.moler_vae import MoLeRVae
 from molecule_generation.preprocessing.data_conversion_utils import remove_non_max_frags
 from molecule_generation.utils.model_utils import load_vae_model_and_dataset
-from molecule_generation.utils.moler_decoding_utils import DecoderSamplingMode, MoLeRDecoderState
+from molecule_generation.utils.moler_decoding_utils import (
+    DecoderSamplingMode,
+    MoLeRDecoderState,
+    MoleculeGenerationChoiceInfo,
+)
 
 Pathlike = Union[str, pathlib.Path]
 
@@ -84,13 +88,15 @@ def _decode_from_latents(
     model: Union[MoLeRVae, MoLeRGenerator],
     latent_representations: np.ndarray,
     include_latent_samples: bool = False,
+    include_generation_steps: bool = False,
     init_mols: List[Any] = None,
     beam_size: int = 1,
     sampling_mode: DecoderSamplingMode = DecoderSamplingMode.GREEDY,
-) -> Iterator[Tuple[str, Optional[np.ndarray]]]:
+) -> Iterator[Tuple[str, Optional[np.ndarray], Optional[List[MoleculeGenerationChoiceInfo]]]]:
     decoder_states = model.decoder.decode(
         graph_representations=latent_representations,
         initial_molecules=init_mols,
+        store_generation_traces=include_generation_steps,
         beam_size=beam_size,
         sampling_mode=sampling_mode,
     )
@@ -102,11 +108,20 @@ def _decode_from_latents(
     for per_sampled_latent_results in sorted(decoder_states_by_id.items(), key=lambda kv: kv[0]):
         best_decoder_state = max(per_sampled_latent_results[1], key=lambda s: s.logprob)
         mol = remove_non_max_frags(Chem.RWMol(best_decoder_state.molecule))
+
         input_mol_representation = None
         if include_latent_samples:
             input_mol_representation = best_decoder_state.molecule_representation
 
-        yield (Chem.MolToSmiles(mol, isomericSmiles=False), input_mol_representation)
+        generation_steps = None
+        if include_generation_steps:
+            generation_steps = best_decoder_state.generation_steps
+
+        yield (
+            Chem.MolToSmiles(mol, isomericSmiles=False),
+            input_mol_representation,
+            generation_steps,
+        )
 
 
 def _moler_worker_process(
@@ -131,6 +146,7 @@ def _moler_worker_process(
             (
                 latent_representations,
                 include_latent_samples,
+                include_generation_steps,
                 init_mols,
                 beam_size,
                 sampling_mode,
@@ -139,6 +155,7 @@ def _moler_worker_process(
                 moler_model,
                 latent_representations,
                 include_latent_samples,
+                include_generation_steps,
                 init_mols,
                 beam_size,
                 sampling_mode,
@@ -286,10 +303,11 @@ class MoLeRInferenceServer(object):
         self,
         latent_representations: np.ndarray,
         include_latent_samples: bool = False,
+        include_generation_steps: bool = False,
         init_mols: List[Any] = None,
         beam_size: int = 1,
         sampling_mode: DecoderSamplingMode = DecoderSamplingMode.GREEDY,
-    ) -> List[Tuple[str, Optional[np.ndarray]]]:
+    ) -> List[Tuple[str, Optional[np.ndarray], Optional[List[MoleculeGenerationChoiceInfo]]]]:
         self.init_workers()
 
         # Choose chunk size such that all workers have something to do.
@@ -317,6 +335,7 @@ class MoLeRInferenceServer(object):
                     (
                         latents_chunk,
                         include_latent_samples,
+                        include_generation_steps,
                         list(next(init_mol_chunks)),
                         beam_size,
                         sampling_mode,
