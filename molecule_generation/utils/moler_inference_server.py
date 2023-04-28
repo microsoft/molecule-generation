@@ -117,6 +117,11 @@ def _decode_from_latents(
         if include_generation_steps:
             generation_steps = best_decoder_state.generation_steps
 
+            # Before returning, we slightly clean up the molecules in the trace. In particular, this
+            # fixes implicit hydrogen count for the partial molecules.
+            for step in generation_steps:
+                Chem.SanitizeMol(step.molecule)
+
         yield (
             Chem.MolToSmiles(mol, isomericSmiles=False),
             input_mol_representation,
