@@ -14,30 +14,24 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python: "3.7.7"
-            tensorflow: "2.1.0"
-            numpy: "1.19.2"
-          - python: "3.9.13"
-            tensorflow: "2.9.1"
-            numpy: "1.23.1"
-    name: build (Python ${{ matrix.python }}, TF ${{ matrix.tensorflow }})
-
+          - environment-file: environment-py37.yml
+            build-name: "Python 3.7.7, TF 2.1.0"
+          - environment-file: environment.yml
+            build-name: "Python 3.9.13, TF 2.9.1"
+    defaults:
+      run:
+        shell: bash -l {0}
+    name: build (${{ matrix.build-name }})
     steps:
     - uses: actions/checkout@v3
-    - name: Add conda to system path
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        mamba-version: "*"
+        channels: conda-forge,defaults
+        channel-priority: true
+        environment-file: ${{ matrix.environment-file }}
+    - name: Install dev dependencies
       run: |
-        echo $CONDA/bin >> $GITHUB_PATH
-    - name: Set up Python ${{ matrix.python }}
-      run: |
-        conda install python=${{ matrix.python }} -c conda-forge
-    - name: Set up tensorflow ${{ matrix.tensorflow }}
-      run: |
-        conda install tensorflow=${{ matrix.tensorflow }} -c conda-forge
-    - name: Install dependencies
-      run: |
-        conda install rdkit==2020.09.1.0 -c conda-forge
-        python -m pip install --upgrade pip
-        python -m pip install numpy==${{ matrix.numpy }}
         python -m pip install .
         python -m pip install black==23.1.0 flake8 pytest
     - name: Lint with black
