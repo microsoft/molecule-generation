@@ -28,7 +28,7 @@ def dataset():
             "max_partial_nodes_per_batch": 50,
         }
     )
-    dataset = JSONLMoLeRTraceDataset(dataset_params)
+    dataset = JSONLMoLeRTraceDataset(dataset_params, no_parallelism=True)
     data_path = RichPath.create(
         os.path.join(os.path.dirname(__file__), "..", "test_datasets", "moler_traces")
     )

@@ -27,7 +27,7 @@ def dataset():
             "max_partial_nodes_per_batch": 50,
         }
     )
-    dataset = JSONLCGVAETraceDataset(dataset_params)
+    dataset = JSONLCGVAETraceDataset(dataset_params, no_parallelism=True)
     data_path = RichPath.create(
         os.path.join(os.path.dirname(__file__), "..", "test_datasets", "cgvae_traces")
     )
