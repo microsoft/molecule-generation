@@ -336,7 +336,7 @@ def test_can_decode_smiles_with_trained_model(capsys, tmp_test_directory):
 
     with MoLeRInferenceServer(get_model_path(tmp_test_directory)) as moler:
         embedding = moler.encode([caffeine_smiles])
-        smiles = [s for s, _ in moler.decode(embedding)]
+        smiles = [s for s, _, _ in moler.decode(embedding)]
 
     assert len(smiles) == 1
 
@@ -353,7 +353,7 @@ def test_can_decode_smiles_with_scaffold_trained_model(capsys, tmp_test_director
     with MoLeRInferenceServer(get_model_path(tmp_test_directory)) as moler:
         # Initial Molecules = [Scaffold]
         embedding = moler.encode([base_smiles])
-        smiles = [s for s, _ in moler.decode(embedding, init_mols=[scaffold_mol])]
+        smiles = [s for s, _, _ in moler.decode(embedding, init_mols=[scaffold_mol])]
 
     assert len(smiles) == 1
 
@@ -376,7 +376,7 @@ def test_can_decode_smiles_list_with_optional_scaffold_trained_model(capsys, tmp
     with MoLeRInferenceServer(get_model_path(tmp_test_directory)) as moler:
         # Initial Molecules = [Scaffold, None]
         embeddings = moler.encode([base_smiles, base_smiles])
-        smiles = [s for s, _ in moler.decode(embeddings, init_mols=[scaffold_mol, None])]
+        smiles = [s for s, _, _ in moler.decode(embeddings, init_mols=[scaffold_mol, None])]
 
         assert len(smiles) == 2
 
@@ -385,12 +385,12 @@ def test_can_decode_smiles_list_with_optional_scaffold_trained_model(capsys, tmp
 
         # Initial Molecules = [None, None]
         embeddings = moler.encode([base_smiles, base_smiles])
-        smiles = [s for s, _ in moler.decode(embeddings, init_mols=[None, None])]
+        smiles = [s for s, _, _ in moler.decode(embeddings, init_mols=[None, None])]
 
         assert len(smiles) == 2
 
         # Initial Molecules = None
         embeddings = moler.encode([base_smiles, base_smiles])
-        smiles = [s for s, _ in moler.decode(embeddings)]
+        smiles = [s for s, _, _ in moler.decode(embeddings)]
 
         assert len(smiles) == 2
