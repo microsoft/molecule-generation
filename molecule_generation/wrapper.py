@@ -8,7 +8,10 @@ from rdkit import Chem
 
 from molecule_generation.models.moler_generator import MoLeRGenerator
 from molecule_generation.models.moler_vae import MoLeRVae
-from molecule_generation.utils.moler_decoding_utils import DecoderSamplingMode
+from molecule_generation.utils.moler_decoding_utils import (
+    DecoderSamplingMode,
+    MoleculeGenerationChoiceInfo,
+)
 from molecule_generation.utils.model_utils import get_model_class, get_model_parameters
 
 
@@ -115,7 +118,8 @@ class VaeWrapper(ModelWrapper):
         self,
         latents: List[np.ndarray],  # type: ignore
         scaffolds: Optional[List[Optional[str]]] = None,
-    ) -> List[str]:
+        include_generation_steps: bool = False,
+    ) -> Union[List[str], List[Tuple[str, MoleculeGenerationChoiceInfo]]]:
         """Decode molecules from latent vectors, potentially conditioned on scaffolds.
 
         Args:
@@ -123,9 +127,12 @@ class VaeWrapper(ModelWrapper):
             scaffolds: List of scaffold molecules, one per each vector. Each scaffold in
                 the list can be `None` (denoting lack of scaffold) or the whole list can
                 be `None`, which is synonymous with `[None, ..., None]`.
+            include_generation_steps: Whether to also track and return various metadata about the
+                full generation trace.
 
         Returns:
-            List of SMILES strings.
+            List of results. Each result is just a SMILES string if `include_generation_steps` is
+            `False`, and a pair containing the SMILES string and the generation trace otherwise.
         """
         if scaffolds is not None:
             scaffolds = [
@@ -133,15 +140,18 @@ class VaeWrapper(ModelWrapper):
                 for scaffold in scaffolds
             ]
 
-        return [
-            smiles_str
-            for smiles_str, _ in self._inference_server.decode(
-                latent_representations=np.stack(latents),
-                include_latent_samples=False,
-                init_mols=scaffolds,
-                beam_size=self.beam_size,
-            )
-        ]
+        results = self._inference_server.decode(
+            latent_representations=np.stack(latents),
+            include_latent_samples=False,
+            include_generation_steps=include_generation_steps,
+            init_mols=scaffolds,
+            beam_size=self.beam_size,
+        )
+
+        if include_generation_steps:
+            return [(smiles_str, steps) for smiles_str, _, steps in results]
+        else:
+            return [smiles_str for smiles_str, _, _ in results]
 
     def sample(self, num_samples: int) -> List[str]:
         """Sample SMILES strings from the model.

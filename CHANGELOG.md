@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Option for `decode` to return the entire generation trace ([#51](https://github.com/microsoft/molecule-generation/pull/51))
+
 ### Changed
 - Reformatted the code with the newest `black` (version `23.1.0`) and pinned it in CI to avoid further unexpected updates ([#50](https://github.com/microsoft/molecule-generation/pull/50))
 
