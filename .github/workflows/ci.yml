@@ -47,6 +47,6 @@ jobs:
     - name: Run unit tests
       run: |
         pytest --ignore=./molecule_generation/test/integration/
-    - name: Run integration test
+    - name: Run integration tests
       run: |
         pytest ./molecule_generation/test/integration/
