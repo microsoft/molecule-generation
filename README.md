@@ -3,35 +3,50 @@
 [![CI](https://github.com/microsoft/molecule-generation/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/microsoft/molecule-generation/actions/workflows/ci.yml)
 [![license](https://img.shields.io/github/license/microsoft/molecule-generation.svg)](https://github.com/microsoft/molecule-generation/blob/main/LICENSE)
 [![pypi](https://img.shields.io/pypi/v/molecule-generation.svg)](https://pypi.org/project/molecule-generation/)
+[![python](https://img.shields.io/pypi/pyversions/molecule_generation)](https://www.python.org/downloads/)
 [![code style](https://img.shields.io/badge/code%20style-black-202020.svg)](https://github.com/ambv/black)
 
-This repository contains training and inference code for the MoLeR model introduced in [Learning to Extend Molecular Scaffolds with Structural Motifs](https://arxiv.org/abs/2103.03864). We also include our implementation of CGVAE, but it currently lacks integration with the high-level model interface, and is provided mostly for reference.
+This repository contains training and inference code for the MoLeR model introduced in [Learning to Extend Molecular Scaffolds with Structural Motifs](https://arxiv.org/abs/2103.03864). We also include our implementation of CGVAE, but without integration with the high-level model interface.
 
 ## Quick start
 
-The `molecule_generation` package can be installed via `pip`, but it additionally depends on `rdkit` and (if one wants to use a GPU) on correctly setting up CUDA libraries. One approach to get both is through our minimalistic `conda` environment:
+`molecule_generation` can be installed via `pip`, but it additionally depends on `rdkit` and (if one wants to use a GPU) on setting up CUDA libraries. One can get both through `conda`:
 
 ```bash
 conda env create -f environment.yml
 conda activate moler-env
 ```
 
-This environment pins the versions of `python`, `rdkit` and `tensorflow` for reproducibility, but `molecule_generation` is compatible with a range of versions of these dependencies. If `tensorflow` installation doesn't work out-of-the-box for your particular system, you may need to refer to [the tensorflow website](https://www.tensorflow.org/install) for guidelines.
+Our package was tested with `python>=3.7`, `tensorflow>=2.1.0` and `rdkit>=2020.09.1`; see the `environment*.yml` files for the exact configurations tested in CI.
 
-To then install the latest release of `molecule_generation`, simply run
+To then install the latest release of `molecule_generation`, run
 ```bash
 pip install molecule-generation
 ```
 
-Alternatively, running `pip install -e .` within the root folder installs the latest state of the code, including changes that were merged into `main` but not yet released.
+Alternatively, `pip install -e .` within the root folder installs the latest state of the code, including changes that were merged into `main` but not yet released.
 
-A MoLeR checkpoint trained using the default hyperparameters is available [here](https://figshare.com/ndownloader/files/34642724) (or [here](https://pan.baidu.com/s/1lkiWK9-d5MvNyzqRrusGXA?pwd=4hij) if you're in China and figshare doesn't work for you). This file needs to be saved in a fresh folder `MODEL_DIR` (e.g., `/tmp/MoLeR_checkpoint`) and be renamed to have the `.pkl` ending (e.g., to `GNN_Edge_MLP_MoLeR__2022-02-24_07-16-23_best.pkl`). Then you can sample 10 molecules by running
+A MoLeR checkpoint trained using the default hyperparameters is available [here](https://figshare.com/ndownloader/files/34642724). This file needs to be saved in a fresh folder `MODEL_DIR` (e.g., `/tmp/MoLeR_checkpoint`) and be renamed to have the `.pkl` ending (e.g., to `GNN_Edge_MLP_MoLeR__2022-02-24_07-16-23_best.pkl`). Then you can sample 10 molecules by running
 
 ```bash
 molecule_generation sample MODEL_DIR 10
 ```
 
-See the next sections for how to train your own model and run more advanced inference.
+See below for how to train your own model and run more advanced inference.
+
+### Troubleshooting
+
+> Q: I am in China and so the figshare checkpoint link does not work for me.
+>
+> A: You can try [this link](https://pan.baidu.com/s/1lkiWK9-d5MvNyzqRrusGXA?pwd=4hij) instead.
+
+> Q: My particular combination of dependency versions does not work.
+>
+> A: Please submit an issue and default to using one of the pinned configurations from `environment-py*.yml` in the meantime.
+
+> Q: Installing `tensorflow` on my system does not work.
+>
+> A: Please refer to [the tensorflow website](https://www.tensorflow.org/install) for guidelines.
 
 ## Workflow
 
