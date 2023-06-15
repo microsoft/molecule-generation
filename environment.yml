@@ -3,8 +3,9 @@ channels:
   - rdkit
   - conda-forge
 dependencies:
-  - python==3.9.13
-  - rdkit==2020.09.1.0
-  - tensorflow==2.9.1
+  - pip
+  - python=3.10
+  - rdkit
+  - tensorflow
   - pip:
-    - numpy==1.23.1
+    - numpy

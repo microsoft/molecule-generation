@@ -15,16 +15,6 @@ from molecule_generation.utils.preprocessing_utils import save_data, write_jsonl
 
 
 @pytest.fixture
-def smiles_list():
-    smiles_file = os.path.join(
-        os.path.dirname(__file__), "..", "test_datasets", "10_test_smiles.smiles"
-    )
-    with open(smiles_file) as f:
-        data = f.readlines()
-    return data
-
-
-@pytest.fixture
 def interrim_dir():
     save_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp")
     os.mkdir(save_dir)
@@ -34,8 +24,8 @@ def interrim_dir():
         shutil.rmtree(save_dir)
 
 
-def test_write_smiles_to_jsonl(smiles_list, interrim_dir):
-    smiles_dict = [{"SMILES": x.strip()} for x in smiles_list]
+def test_write_smiles_to_jsonl(test_smiles, interrim_dir):
+    smiles_dict = [{"SMILES": x.strip()} for x in test_smiles]
     data = featurise_smiles_datapoints(
         train_data=smiles_dict,
         valid_data=smiles_dict,
@@ -48,9 +38,9 @@ def test_write_smiles_to_jsonl(smiles_list, interrim_dir):
     assert num_written == 10
 
 
-def test_read_and_write_jsonl_files(smiles_list, interrim_dir):
+def test_read_and_write_jsonl_files(test_smiles, interrim_dir):
     # Prepare the jsonl.gz files
-    smiles_dict = [{"SMILES": x.strip()} for x in smiles_list]
+    smiles_dict = [{"SMILES": x.strip()} for x in test_smiles]
     data = featurise_smiles_datapoints(
         train_data=smiles_dict,
         valid_data=smiles_dict,

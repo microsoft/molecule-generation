@@ -15,13 +15,17 @@ jobs:
       matrix:
         include:
           - environment-file: environment-py37.yml
-            build-name: "Python 3.7.7, TF 2.1.0"
+            build-name: "python 3.7.7, tf 2.1.0, rdkit 2020.09.1"
+          - environment-file: environment-py38.yml
+            build-name: "python 3.8.16, tf 2.6.2, rdkit 2021.09.1"
+          - environment-file: environment-py39.yml
+            build-name: "python 3.9.16, tf 2.9.1, rdkit 2022.09.1"
           - environment-file: environment.yml
-            build-name: "Python 3.9.13, TF 2.9.1"
+            build-name: "python 3.10, tf latest, rdkit latest"
     defaults:
       run:
         shell: bash -l {0}
-    name: build (${{ matrix.build-name }})
+    name: ${{ matrix.build-name }}
     steps:
     - uses: actions/checkout@v3
     - uses: conda-incubator/setup-miniconda@v2
@@ -43,6 +47,6 @@ jobs:
     - name: Run unit tests
       run: |
         pytest --ignore=./molecule_generation/test/integration/
-    - name: Run integration test
+    - name: Run integration tests
       run: |
         pytest ./molecule_generation/test/integration/

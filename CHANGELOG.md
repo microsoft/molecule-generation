@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Removed deprecated `numpy` types to make `molecule_generation` work with `numpy>=1.24.0` ([#49](https://github.com/microsoft/molecule-generation/pull/49))
+- Patched `GetSSSR` for compatibility with `rdkit>=2022.09.1` ([#58](https://github.com/microsoft/molecule-generation/pull/58))
 
 ## [0.3.0] - 2022-10-18
 

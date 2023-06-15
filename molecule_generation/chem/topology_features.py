@@ -3,9 +3,21 @@ import logging
 from typing import Collection
 
 import numpy as np
+import rdkit
+from packaging.version import parse as parse_version
 from rdkit.Chem import BondType, GetSSSR, RWMol
 
 logger = logging.getLogger(__name__)
+
+
+def get_SSSR_size(mol: RWMol) -> int:
+    """Get the size of the smallest set of smallest rings as computed by `rdkit`."""
+    # Starting with version 2022.09.1 `GetSSSR` returns the SSSR itself, prior to that it returns
+    # the *size* of the SSSR.
+    if parse_version(rdkit.__version__) >= parse_version("2022.09.1"):
+        return len(GetSSSR(mol))
+    else:
+        return GetSSSR(mol)
 
 
 def calculate_topology_features(edges: Collection, mol: RWMol) -> np.ndarray:
@@ -32,13 +44,13 @@ def calculate_topology_features(edges: Collection, mol: RWMol) -> np.ndarray:
     mol_copy = RWMol(mol)
     try:
         # Must be calculated before GetRingInfo is called, to ensure ring info is initialised.
-        num_rings_in_base_mol = GetSSSR(mol_copy)
+        num_rings_in_base_mol = get_SSSR_size(mol_copy)
         num_base_tri_ring_edges = _calculate_num_tri_rings(mol_copy)
 
         for edge_idx, edge in enumerate(edges):
             test_mol = RWMol(mol)
             test_mol.AddBond(int(edge[0]), int(edge[1]), BondType.SINGLE)
-            num_rings_with_new_edge = GetSSSR(test_mol)
+            num_rings_with_new_edge = get_SSSR_size(test_mol)
             num_tri_ring_edges = _calculate_num_tri_rings(test_mol)
 
             num_tri_ring_edges_created_by_edge[edge_idx] = (
