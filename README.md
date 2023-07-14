@@ -44,9 +44,9 @@ See below for how to train your own model and run more advanced inference.
 >
 > A: Please submit an issue and default to using one of the pinned configurations from `environment-py*.yml` in the meantime.
 
-> Q: Installing `tensorflow` on my system does not work.
+> Q: Installing `tensorflow` on my system does not work, or it works but GPU is not being used.
 >
-> A: Please refer to [the tensorflow website](https://www.tensorflow.org/install) for guidelines.
+> A: Please refer to [the tensorflow website](https://www.tensorflow.org/install) for guidelines. In particular, with recent versions of `tensorflow` one may get a "libdevice not found" error; in that case please follow the instructions at the bottom of [this page](https://www.tensorflow.org/install/pip#step-by-step_instructions).
 
 ## Workflow
 
