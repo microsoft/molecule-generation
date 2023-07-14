@@ -7,6 +7,9 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+- Relax `protobuf` version requirement ([#62](https://github.com/microsoft/molecule-generation/pull/62))
+
 ## [0.4.0] - 2023-06-16
 
 ### Added
