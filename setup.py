@@ -23,7 +23,7 @@ setuptools.setup(
         "numpy>=1.19.2",
         "protobuf<4.21",  # Avoid the breaking 4.21.0 release.
         "scikit-learn>=0.24.1",
-        "tensorflow>=2.1.0,<3",
+        "tensorflow>=2.1,<2.10",  # Avoid versions 2.10+ which suffer from memory leaks.
         "tf2_gnn>=2.13.0",
     ],
     packages=setuptools.find_packages(),

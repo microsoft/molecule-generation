@@ -6,6 +6,6 @@ dependencies:
   - pip
   - python=3.10
   - rdkit
-  - tensorflow
+  - tensorflow<2.10
   - pip:
     - numpy
