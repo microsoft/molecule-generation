@@ -9,6 +9,7 @@ from queue import Empty
 from typing import Any, DefaultDict, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
+import tensorflow as tf
 from more_itertools import chunked, ichunked
 from rdkit import Chem
 
@@ -80,6 +81,10 @@ def _encode_from_smiles(
             result.extend(zip(graph_rep_mean.numpy(), graph_rep_logvar.numpy()))
         else:
             result.extend(graph_rep_mean.numpy())
+
+    # Hack below avoids memory leaks caused by repeated calls to `tf.data.Dataset.from_generator`
+    # (see https://github.com/tensorflow/tensorflow/issues/37653 for details).
+    tf.compat.v1.get_default_graph()._py_funcs_used_in_graph = []
 
     return result
 

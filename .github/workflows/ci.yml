@@ -21,7 +21,7 @@ jobs:
           - environment-file: environment-py39.yml
             build-name: "python 3.9.16, tf 2.9.1, rdkit 2022.09.1"
           - environment-file: environment.yml
-            build-name: "python 3.10, tf latest, rdkit latest"
+            build-name: "python 3.10, tf 2.9.*, rdkit latest"
     defaults:
       run:
         shell: bash -l {0}
