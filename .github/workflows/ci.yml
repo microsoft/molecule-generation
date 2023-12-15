@@ -14,8 +14,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - environment-file: environment-py37.yml
-            build-name: "python 3.7.7, tf 2.1.0, rdkit 2020.09.1"
           - environment-file: environment-py38.yml
             build-name: "python 3.8.16, tf 2.6.2, rdkit 2021.09.1"
           - environment-file: environment-py39.yml
