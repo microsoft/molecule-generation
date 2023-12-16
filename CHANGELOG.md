@@ -11,6 +11,7 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 - Relax `protobuf` version requirement ([#62](https://github.com/microsoft/molecule-generation/pull/62))
 
 ### Fixed
+- Fix hydrogen handling in scaffolds with explicit attachment points ([#70](https://github.com/microsoft/molecule-generation/pull/70))
 - Avoid memory leaks and other `tensorflow` issues ([#68](https://github.com/microsoft/molecule-generation/pull/68))
 
 ## [0.4.0] - 2023-06-16
